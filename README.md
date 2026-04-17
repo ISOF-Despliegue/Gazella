@@ -11,7 +11,32 @@ Cliente para el sistema de publicación y voluntariado para la conservación de 
 * Ortega Teoba Leonardo Daniel 
 * Castillo Barradas Carlos 
 
-## Stack Tecnologico ##
+## Tecnologías
 
-* TypeScript
 * Electron
+* TypeScript
+* Vite
+* Tailwind CSS
+* React Router DOM
+
+## Instalación
+
+Clonar el repositorio:
+
+```
+git clone <https://github.com/ISOF-Despliegue/Gazella>
+cd <NOMBRE_DEL_PROYECTO>
+```
+
+Instalar dependencias:
+
+```
+npm install
+```
+
+## Ejecución
+
+```
+npm run dev
+```
+
