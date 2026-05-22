@@ -1,10 +1,28 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginWithPassword } from '../services/auth';
 
 export function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+
+    const handleLogin = async () => {
+        setError('');
+        setIsSubmitting(true);
+
+        try {
+            await loginWithPassword(email.trim(), password);
+            navigate('/dashboard');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'No se pudo iniciar sesion.';
+            setError(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div style={{
@@ -83,7 +101,8 @@ export function LoginPage() {
 
                 {/* Botón ingresar */}
                 <button
-                    onClick={() => navigate('/home')}
+                    onClick={handleLogin}
+                    disabled={isSubmitting}
                     style={{
                         padding: '14px',
                         backgroundColor: 'white',
@@ -93,10 +112,17 @@ export function LoginPage() {
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         marginTop: '8px',
+                        opacity: isSubmitting ? 0.65 : 1,
                     }}
                 >
-                    Ingresar
+                    {isSubmitting ? 'Ingresando...' : 'Ingresar'}
                 </button>
+
+                {error && (
+                    <p style={{ color: '#b91c1c', fontSize: '14px', textAlign: 'center', margin: 0 }}>
+                        {error}
+                    </p>
+                )}
 
                 {/* Links */}
                 <div style={{ textAlign: 'center', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>

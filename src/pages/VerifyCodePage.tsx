@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { requestVerificationEmail, verifyEmail } from '../services/auth';
 
 export function VerifyCodePage() {
     const [code, setCode] = useState(['', '', '', '', '', '']);
+    const [error, setError] = useState('');
+    const [message, setMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+    const email = (location.state as { email?: string } | null)?.email ?? '';
 
     const handleChange = (index: number, value: string) => {
         if (value.length > 1) return;
@@ -11,10 +17,38 @@ export function VerifyCodePage() {
         newCode[index] = value;
         setCode(newCode);
 
-        // Auto avanzar al siguiente input
         if (value && index < 5) {
             const next = document.getElementById(`code-${index + 1}`);
             next?.focus();
+        }
+    };
+
+    const handleVerify = async () => {
+        setError('');
+        setMessage('');
+        setIsSubmitting(true);
+
+        try {
+            await verifyEmail(email, code.join(''));
+            navigate('/login');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'No se pudo verificar el codigo.';
+            setError(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleResend = async () => {
+        setError('');
+        setMessage('');
+
+        try {
+            await requestVerificationEmail(email);
+            setMessage('Te enviamos un nuevo codigo.');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'No se pudo reenviar el codigo.';
+            setError(message);
         }
     };
 
@@ -38,14 +72,12 @@ export function VerifyCodePage() {
             justifyContent: 'center',
             padding: '40px',
         }}>
-            {/* Logo */}
             <img
                 src="/src/assets/gazella.png"
                 alt="Gazella"
                 style={{ width: '80px', marginBottom: '24px', objectFit: 'contain' }}
             />
 
-            {/* Mensaje */}
             <p style={{
                 fontSize: '16px',
                 color: '#374151',
@@ -54,15 +86,13 @@ export function VerifyCodePage() {
                 lineHeight: '1.7',
                 marginBottom: '40px',
             }}>
-                Hemos enviado un código de seguridad de un solo uso a <strong>carlos@gmail.com</strong><br />
-                Debería llegar en los próximos minutos.<br />
+                Hemos enviado un codigo de seguridad de un solo uso a <strong>{email || 'tu correo'}</strong><br />
+                Deberia llegar en los proximos minutos.<br />
                 Si no lo ves en tu bandeja de entrada, por favor revisa tu carpeta de spam/correo no deseado.<br />
-                Por favor, ingrésalo a continuación:
+                Por favor, ingresalo a continuacion:
             </p>
 
-            {/* Inputs del código */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '40px' }}>
-                {/* Primer grupo */}
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {[0, 1, 2].map((i) => (
                         <input
@@ -77,10 +107,8 @@ export function VerifyCodePage() {
                     ))}
                 </div>
 
-                {/* Guión */}
-                <span style={{ fontSize: '24px', color: '#374151', margin: '0 8px' }}>—</span>
+                <span style={{ fontSize: '24px', color: '#374151', margin: '0 8px' }}>-</span>
 
-                {/* Segundo grupo */}
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {[3, 4, 5].map((i) => (
                         <input
@@ -96,10 +124,10 @@ export function VerifyCodePage() {
                 </div>
             </div>
 
-            {/* Botón verificar */}
             <div style={{ width: '100%', maxWidth: '440px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <button
-                    onClick={() => navigate('/dashboard')}
+                    onClick={handleVerify}
+                    disabled={isSubmitting || !email}
                     style={{
                         padding: '14px',
                         backgroundColor: 'white',
@@ -108,14 +136,35 @@ export function VerifyCodePage() {
                         fontSize: '16px',
                         fontWeight: 'bold',
                         cursor: 'pointer',
+                        opacity: isSubmitting || !email ? 0.65 : 1,
                     }}
                 >
-                    Verificar código
+                    {isSubmitting ? 'Verificando...' : 'Verificar codigo'}
+                </button>
+
+                {error && (
+                    <p style={{ color: '#b91c1c', fontSize: '14px', textAlign: 'center', margin: 0 }}>
+                        {error}
+                    </p>
+                )}
+
+                {message && (
+                    <p style={{ color: '#166534', fontSize: '14px', textAlign: 'center', margin: 0 }}>
+                        {message}
+                    </p>
+                )}
+
+                <button
+                    onClick={handleResend}
+                    disabled={!email}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}
+                >
+                    Reenviar codigo
                 </button>
 
                 <div style={{ textAlign: 'center' }}>
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/registro')}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}
                     >
                         Regresar

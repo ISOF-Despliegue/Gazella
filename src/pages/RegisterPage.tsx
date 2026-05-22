@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { register } from '../services/auth';
+import { saveLocalProfile } from '../services/accounts';
 
 export function RegisterPage() {
     const [nombre, setNombre] = useState('');
@@ -8,7 +10,53 @@ export function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+
+    const handleRegister = async () => {
+        setError('');
+
+        if (password !== confirmPassword) {
+            setError('Las contrasenas no coinciden.');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            const trimmedEmail = email.trim();
+            const trimmedName = nombre.trim();
+            const trimmedParentalSurname = apellidoPaterno.trim();
+            const trimmedMaternalSurname = apellidoMaterno.trim();
+
+            await register({
+                email: trimmedEmail,
+                password,
+                name: trimmedName,
+                parentalSurname: trimmedParentalSurname || undefined,
+                maternalSurname: trimmedMaternalSurname || undefined,
+            });
+
+            saveLocalProfile({
+                email: trimmedEmail,
+                name: trimmedName,
+                parentalSurname: trimmedParentalSurname || null,
+                maternalSurname: trimmedMaternalSurname || null,
+                bio: null,
+                pfpUri: null,
+                role: 'volunteer',
+                joinedAt: new Date().toISOString(),
+            });
+
+            navigate('/verificar', { state: { email: trimmedEmail } });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'No se pudo completar el registro.';
+            setError(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const inputContainerStyle = {
         display: 'flex',
@@ -128,7 +176,8 @@ export function RegisterPage() {
 
                 {/* Botón registrarse */}
                 <button
-                    onClick={() => navigate('/verificar')}
+                    onClick={handleRegister}
+                    disabled={isSubmitting}
                     style={{
                         padding: '14px',
                         backgroundColor: 'white',
@@ -138,15 +187,22 @@ export function RegisterPage() {
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         marginTop: '8px',
+                        opacity: isSubmitting ? 0.65 : 1,
                     }}
                 >
-                    Registrarme
+                    {isSubmitting ? 'Registrando...' : 'Registrarme'}
                 </button>
+
+                {error && (
+                    <p style={{ color: '#b91c1c', fontSize: '14px', textAlign: 'center', margin: 0 }}>
+                        {error}
+                    </p>
+                )}
 
                 {/* Regresar */}
                 <div style={{ textAlign: 'center' }}>
                     <button
-                        onClick={() => navigate('/verificar')}
+                        onClick={() => navigate('/login')}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}
                     >
                         Regresar

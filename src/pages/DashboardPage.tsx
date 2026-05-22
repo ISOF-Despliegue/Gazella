@@ -1,26 +1,73 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArticleCard } from '../components/ArticleCard';
 import { ProjectCard } from '../components/ProjectCard';
 import { type Article } from '../types/article';
 import { type Project } from '../types/project';
+import { getLocalProfile, getMyAccount, type EditableAccountProfile } from '../services/accounts';
+import { getCurrentSession, logout, type AuthSession } from '../services/auth';
 
 const MOCK_ARTICLES: Article[] = [
-    { id: 1, title: 'La Sexta Extinción Masiva', author: 'Abel Yong', summary: 'La extinción es un problema...', likes: 0 },
-    { id: 2, title: 'La Basura nos está Acabando', author: 'Carlos Castillo', summary: 'Basura en los océanos...', likes: 0 },
+    { id: 1, title: 'La Sexta Extincion Masiva', author: 'Abel Yong', summary: 'La extincion es un problema...', likes: 0 },
+    { id: 2, title: 'La Basura nos esta Acabando', author: 'Carlos Castillo', summary: 'Basura en los oceanos...', likes: 0 },
 ];
 
 const MOCK_PROJECTS: Project[] = [
-    { id: 1, title: 'Recolección de Tapas PET', description: 'Recolectaremos tapas y...', location: 'Av. Xalapa #123', date: '20 de marzo de 2026', volunteersEnrolled: 15, volunteersMax: 20 },
-    { id: 2, title: 'Recolección de Basura', description: 'Recolectaremos basura y...', location: 'Av. Xalapa #123', date: '22 de marzo de 2026', volunteersEnrolled: 11, volunteersMax: 20 },
+    { id: 1, title: 'Recoleccion de Tapas PET', description: 'Recolectaremos tapas y...', location: 'Av. Xalapa #123', date: '20 de marzo de 2026', volunteersEnrolled: 15, volunteersMax: 20 },
+    { id: 2, title: 'Recoleccion de Basura', description: 'Recolectaremos basura y...', location: 'Av. Xalapa #123', date: '22 de marzo de 2026', volunteersEnrolled: 11, volunteersMax: 20 },
 ];
+
+function getFullName(profile: EditableAccountProfile | null, session: AuthSession | null) {
+    if (profile?.name) {
+        return [profile.name, profile.parentalSurname, profile.maternalSurname]
+            .filter(Boolean)
+            .join(' ');
+    }
+
+    return session?.email?.split('@')[0] ?? 'usuario';
+}
 
 export function DashboardPage() {
     const navigate = useNavigate();
+    const [session, setSession] = useState<AuthSession | null>(null);
+    const [profile, setProfile] = useState<EditableAccountProfile | null>(null);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+    useEffect(() => {
+        const currentSession = getCurrentSession();
+
+        if (!currentSession) {
+            navigate('/login');
+            return;
+        }
+
+        setSession(currentSession);
+        setProfile(getLocalProfile(currentSession.email));
+
+        getMyAccount()
+            .then((account) => {
+                setProfile(account);
+            })
+            .catch(() => undefined)
+            .finally(() => setIsLoadingProfile(false));
+    }, [navigate]);
+
+    const displayName = useMemo(() => getFullName(profile, session), [profile, session]);
+    const roleLabel = profile?.role ?? session?.roles[0] ?? 'sin rol asignado';
+    const initials = displayName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('') || 'U';
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     return (
         <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-
-            {/* Navbar logueado */}
             <nav style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -28,16 +75,15 @@ export function DashboardPage() {
                 padding: '16px 40px',
                 backgroundColor: 'white',
                 borderBottom: '1px solid #e5e7eb',
+                gap: '24px',
             }}>
-                {/* Logo + Título */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <img src="/src/assets/gazella.png" alt="Gazella" style={{ width: '70px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '28px', fontWeight: 'bold', lineHeight: '1.2' }}>
-                        Conservación de<br />la biodiversidad
+                        Conservacion de<br />la biodiversidad
                     </h1>
                 </div>
 
-                {/* Buscador */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -47,24 +93,65 @@ export function DashboardPage() {
                     width: '320px',
                     backgroundColor: 'white',
                 }}>
-                    <span style={{ marginRight: '8px', color: '#9ca3af' }}>🔍</span>
+                    <span style={{ marginRight: '8px', color: '#9ca3af' }}>Buscar</span>
                     <input
                         type="text"
-                        placeholder="Busca artículos o proyectos"
+                        placeholder="Busca articulos o proyectos"
                         style={{ outline: 'none', fontSize: '14px', width: '100%', border: 'none', background: 'transparent' }}
                     />
                 </div>
 
-                {/* Usuario */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '20px', color: '#6b7280' }}>👤</span>
-                    <span style={{ fontWeight: '500', fontSize: '15px' }}>Carlos</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: '#e5e7eb',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        color: '#374151',
+                        overflow: 'hidden',
+                    }}>
+                        {profile?.pfpUri ? (
+                            <img src={profile.pfpUri} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : initials}
+                    </div>
+                    <button
+                        onClick={() => navigate('/perfil')}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            lineHeight: 1.2,
+                            minWidth: '120px',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                            textAlign: 'left',
+                        }}
+                    >
+                        <span style={{ fontWeight: '600', fontSize: '15px' }}>{displayName}</span>
+                        <span style={{ fontSize: '12px', color: '#6b7280' }}>{roleLabel}</span>
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            padding: '8px 12px',
+                            fontSize: '13px',
+                        }}
+                    >
+                        Salir
+                    </button>
                 </div>
             </nav>
 
             <div style={{ padding: '24px 40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                {/* Banner bienvenida */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -74,19 +161,25 @@ export function DashboardPage() {
                     borderRadius: '10px',
                     padding: '20px 28px',
                 }}>
-                    <img src="/src/assets/gorrito.png" alt="gorrito" style={{ width: '56px', objectFit: 'contain' }} />
+                    <img src="/src/assets/gorrito.png" alt="Panel de usuario" style={{ width: '56px', objectFit: 'contain' }} />
                     <div>
-                        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>¡Bienvenido, Carlos!</h2>
-                        <p style={{ fontSize: '14px', color: '#6b7280' }}>Este es tu panel de control</p>
+                        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            Bienvenido, {displayName}
+                        </h2>
+                        <p style={{ fontSize: '14px', color: '#6b7280' }}>
+                            {isLoadingProfile ? 'Cargando tu perfil...' : `Panel de usuario - ${roleLabel}`}
+                        </p>
+                        {profile?.email && (
+                            <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>{profile.email}</p>
+                        )}
                     </div>
                 </div>
 
-                {/* Acciones rápidas */}
                 <div style={{ display: 'flex', gap: '16px' }}>
                     {[
-                        { icon: '📝', label: 'Escribir nuevo artículo', path: '/nuevo-articulo' },
-                        { icon: '📄', label: 'Mis artículos', path: '/articulos' },
-                        { icon: '👥', label: 'Mis proyectos', path: '/mis-proyectos' },
+                        { label: 'Escribir nuevo articulo', path: '/nuevo-articulo' },
+                        { label: 'Mis articulos', path: '/articulos' },
+                        { label: 'Mis proyectos', path: '/mis-proyectos' },
                     ].map((item) => (
                         <button
                             key={item.label}
@@ -95,6 +188,7 @@ export function DashboardPage() {
                                 flex: 1,
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '12px',
                                 padding: '16px 20px',
                                 backgroundColor: 'white',
@@ -105,44 +199,43 @@ export function DashboardPage() {
                                 fontWeight: '500',
                             }}
                         >
-                            <span style={{ fontSize: '22px' }}>{item.icon}</span>
                             {item.label}
                         </button>
                     ))}
                 </div>
 
-                {/* Contenido principal */}
                 <div style={{ display: 'flex', gap: '40px' }}>
-
-                    {/* Artículos */}
                     <section style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.05em' }}>ARTÍCULOS DESTACADOS</h2>
+                        <h2 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.05em' }}>ARTICULOS DESTACADOS</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {MOCK_ARTICLES.map((article) => (
                                 <ArticleCard key={article.id} article={article} />
                             ))}
                         </div>
-                        <button style={{
-                            marginTop: '16px',
-                            padding: '8px 20px',
-                            border: '1px solid #333',
-                            borderRadius: '4px',
-                            backgroundColor: 'white',
-                            cursor: 'pointer',
-                            fontSize: '13px',
-                        }}>Ver todos los artículos</button>
+                        <button
+                            onClick={() => navigate('/articulos')}
+                            style={{
+                                marginTop: '16px',
+                                padding: '8px 20px',
+                                border: '1px solid #333',
+                                borderRadius: '4px',
+                                backgroundColor: 'white',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                            }}
+                        >
+                            Ver todos los articulos
+                        </button>
                     </section>
 
-                    {/* Proyectos */}
                     <section style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.05em' }}>PRÓXIMOS PROYECTOS DE VOLUNTARIADO</h2>
+                        <h2 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.05em' }}>PROXIMOS PROYECTOS DE VOLUNTARIADO</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {MOCK_PROJECTS.map((project) => (
                                 <ProjectCard key={project.id} project={project} />
                             ))}
                         </div>
                     </section>
-
                 </div>
             </div>
         </div>
