@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register } from '../services/auth';
 import { saveLocalProfile } from '../services/accounts';
+import { BackButton } from '../components/BackButton';
 
 export function RegisterPage() {
     const [nombre, setNombre] = useState('');
@@ -87,6 +88,10 @@ export function RegisterPage() {
             justifyContent: 'center',
             padding: '40px',
         }}>
+            <div style={{ position: 'absolute', top: '24px', left: '24px' }}>
+                <BackButton fallbackPath="/login" />
+            </div>
+
             {/* Logo */}
             <img
                 src="/src/assets/gazella.png"

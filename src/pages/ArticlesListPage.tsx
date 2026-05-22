@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BackButton } from '../components/BackButton';
 
 interface Article {
     id: number;
@@ -58,6 +59,7 @@ export function ArticlesListPage() {
                 borderBottom: '1px solid #e5e7eb',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <BackButton fallbackPath="/dashboard" />
                     <img src="/src/assets/gazella.png" alt="Gazella" style={{ width: '70px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '28px', fontWeight: 'bold', lineHeight: '1.2' }}>
                         Conservación de<br />la biodiversidad

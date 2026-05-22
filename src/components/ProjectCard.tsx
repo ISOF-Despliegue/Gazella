@@ -2,9 +2,10 @@ import { type Project } from '../types/project';
 
 interface ProjectCardProps {
     project: Project;
+    onEnroll?: (project: Project) => void;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onEnroll }: ProjectCardProps) {
     return (
         <div style={{
             display: 'flex',
@@ -35,7 +36,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
                 <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>Fecha: {project.date}</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                     <p style={{ fontSize: '12px', color: '#6b7280' }}>Voluntarios: {project.volunteersEnrolled} / {project.volunteersMax}</p>
-                    <button style={{
+                    <button
+                    onClick={() => onEnroll?.(project)}
+                    style={{
                         fontSize: '12px',
                         padding: '4px 12px',
                         border: '1px solid #333',

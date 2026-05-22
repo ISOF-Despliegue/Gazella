@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { requestVerificationEmail, verifyEmail } from '../services/auth';
+import { BackButton } from '../components/BackButton';
 
 export function VerifyCodePage() {
     const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -72,6 +73,10 @@ export function VerifyCodePage() {
             justifyContent: 'center',
             padding: '40px',
         }}>
+            <div style={{ position: 'absolute', top: '24px', left: '24px' }}>
+                <BackButton fallbackPath="/registro" />
+            </div>
+
             <img
                 src="/src/assets/gazella.png"
                 alt="Gazella"

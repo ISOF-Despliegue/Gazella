@@ -6,6 +6,7 @@ import { type Article } from '../types/article';
 import { type Project } from '../types/project';
 import { getLocalProfile, getMyAccount, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, logout, type AuthSession } from '../services/auth';
+import { BackButton } from '../components/BackButton';
 
 const MOCK_ARTICLES: Article[] = [
     { id: 1, title: 'La Sexta Extincion Masiva', author: 'Abel Yong', summary: 'La extincion es un problema...', likes: 0 },
@@ -78,6 +79,7 @@ export function DashboardPage() {
                 gap: '24px',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <BackButton fallbackPath="/home" />
                     <img src="/src/assets/gazella.png" alt="Gazella" style={{ width: '70px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '28px', fontWeight: 'bold', lineHeight: '1.2' }}>
                         Conservacion de<br />la biodiversidad

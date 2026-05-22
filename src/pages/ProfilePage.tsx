@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLocalProfile, getMyAccount, saveLocalProfile, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, type AuthSession } from '../services/auth';
+import { BackButton } from '../components/BackButton';
 
 const MOCK_PROFILE_ARTICLES = [
     { title: 'La importancia de separar basura', date: '20 Abr 2026', status: 'Publicado' },
@@ -58,13 +59,16 @@ export function ProfilePage() {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: 'white', padding: '24px 36px' }}>
             <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' }}>
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                >
-                    <img src="/src/assets/gazella.png" alt="Gazella" style={{ width: '62px', objectFit: 'contain' }} />
-                    <h1 style={{ fontSize: '40px', fontWeight: 'bold' }}>Conservacion de la biodiversidad</h1>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+                    <BackButton fallbackPath="/dashboard" />
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                        <img src="/src/assets/gazella.png" alt="Gazella" style={{ width: '62px', objectFit: 'contain' }} />
+                        <h1 style={{ fontSize: '40px', fontWeight: 'bold' }}>Conservacion de la biodiversidad</h1>
+                    </button>
+                </div>
                 <button
                     onClick={() => navigate('/perfil')}
                     style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}
