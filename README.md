@@ -40,3 +40,36 @@ npm install
 npm run dev
 ```
 
+## Scripts principales
+
+```bash
+npm run build
+npm run electron:dev
+npm run release:win
+npm run cap:sync
+npm run apk:debug
+```
+
+## Aplicacion de escritorio
+
+El proyecto usa Electron para generar la version de Windows. El instalador se genera con:
+
+```bash
+npm run release:win
+```
+
+El archivo resultante queda en `release/`.
+
+## Android
+
+El proyecto usa Capacitor para generar Android. Para compilar el APK de depuracion:
+
+```bash
+npm run apk:debug
+```
+
+El APK queda en:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
