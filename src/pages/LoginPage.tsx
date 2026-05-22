@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginWithPassword } from '../services/auth';
+import { assets } from '../assets/assets';
 
 export function LoginPage() {
     const [email, setEmail] = useState('');
@@ -36,7 +37,7 @@ export function LoginPage() {
         }}>
             {/* Logo */}
             <img
-                src="/src/assets/gazella.png"
+                src={assets.gazella}
                 alt="Gazella"
                 style={{ width: '80px', marginBottom: '16px', objectFit: 'contain' }}
             />

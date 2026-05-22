@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { assets } from '../assets/assets';
 export function Navbar() {
     const navigate = useNavigate();
     return (
@@ -20,7 +21,7 @@ export function Navbar() {
             }}>
                 {/* Logo */}
                 <div>
-                    <img src="/src/assets/gazella.png" alt="Logo Gazella" style={{ width: '60px', height: '60px', objectFit: 'contain' }} />
+                    <img src={assets.gazella} alt="Logo Gazella" style={{ width: '60px', height: '60px', objectFit: 'contain' }} />
                 </div>
 
                 {/* Buscador */}

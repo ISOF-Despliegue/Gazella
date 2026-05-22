@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getLocalProfile, getMyAccount, saveLocalProfile, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, type AuthSession } from '../services/auth';
 import { BackButton } from '../components/BackButton';
+import { assets } from '../assets/assets';
 
 const MOCK_PROFILE_ARTICLES = [
     { title: 'La importancia de separar basura', date: '20 Abr 2026', status: 'Publicado' },
@@ -65,7 +66,7 @@ export function ProfilePage() {
                         onClick={() => navigate('/dashboard')}
                         style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                     >
-                        <img src="/src/assets/gazella.png" alt="Gazella" style={{ width: '62px', objectFit: 'contain' }} />
+                        <img src={assets.gazella} alt="Gazella" style={{ width: '62px', objectFit: 'contain' }} />
                         <h1 style={{ fontSize: '40px', fontWeight: 'bold' }}>Conservacion de la biodiversidad</h1>
                     </button>
                 </div>

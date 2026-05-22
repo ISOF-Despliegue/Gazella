@@ -8,6 +8,7 @@ import { type Project } from '../types/project';
 import { getCurrentSession } from '../services/auth';
 import { getFeaturedArticles } from '../services/articles';
 import { getUpcomingProjects } from '../services/projects';
+import { assets } from '../assets/assets';
 
 export function HomePage() {
     const navigate = useNavigate();
@@ -53,7 +54,7 @@ export function HomePage() {
                 padding: '32px 60px',
                 borderBottom: '1px solid #e5e7eb',
             }}>
-                <img src="/src/assets/arbol.png" alt="arbol" style={{ width: '130px', objectFit: 'contain' }} />
+                <img src={assets.arbol} alt="arbol" style={{ width: '130px', objectFit: 'contain' }} />
                 <div style={{ textAlign: 'center' }}>
                     <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '20px', letterSpacing: '0.05em' }}>
                         UNETE A LA CONSERVACION
@@ -73,7 +74,7 @@ export function HomePage() {
                         Quiero ser voluntario
                     </button>
                 </div>
-                <img src="/src/assets/arbol.png" alt="arbol" style={{ width: '130px', objectFit: 'contain' }} />
+                <img src={assets.arbol} alt="arbol" style={{ width: '130px', objectFit: 'contain' }} />
             </div>
 
             <div style={{ display: 'flex', gap: '40px', padding: '32px 60px' }}>

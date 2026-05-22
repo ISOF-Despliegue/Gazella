@@ -7,6 +7,7 @@ import { type Project } from '../types/project';
 import { getLocalProfile, getMyAccount, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, logout, type AuthSession } from '../services/auth';
 import { BackButton } from '../components/BackButton';
+import { assets } from '../assets/assets';
 
 const MOCK_ARTICLES: Article[] = [
     { id: 1, title: 'La Sexta Extincion Masiva', author: 'Abel Yong', summary: 'La extincion es un problema...', likes: 0 },
@@ -80,7 +81,7 @@ export function DashboardPage() {
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <BackButton fallbackPath="/home" />
-                    <img src="/src/assets/gazella.png" alt="Gazella" style={{ width: '70px', objectFit: 'contain' }} />
+                    <img src={assets.gazella} alt="Gazella" style={{ width: '70px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '28px', fontWeight: 'bold', lineHeight: '1.2' }}>
                         Conservacion de<br />la biodiversidad
                     </h1>
@@ -163,7 +164,7 @@ export function DashboardPage() {
                     borderRadius: '10px',
                     padding: '20px 28px',
                 }}>
-                    <img src="/src/assets/gorrito.png" alt="Panel de usuario" style={{ width: '56px', objectFit: 'contain' }} />
+                    <img src={assets.gorrito} alt="Panel de usuario" style={{ width: '56px', objectFit: 'contain' }} />
                     <div>
                         <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>
                             Bienvenido, {displayName}

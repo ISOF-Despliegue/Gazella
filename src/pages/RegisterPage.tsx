@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { register } from '../services/auth';
 import { saveLocalProfile } from '../services/accounts';
 import { BackButton } from '../components/BackButton';
+import { assets } from '../assets/assets';
 
 export function RegisterPage() {
     const [nombre, setNombre] = useState('');
@@ -94,7 +95,7 @@ export function RegisterPage() {
 
             {/* Logo */}
             <img
-                src="/src/assets/gazella.png"
+                src={assets.gazella}
                 alt="Gazella"
                 style={{ width: '80px', marginBottom: '16px', objectFit: 'contain' }}
             />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { requestVerificationEmail, verifyEmail } from '../services/auth';
 import { BackButton } from '../components/BackButton';
+import { assets } from '../assets/assets';
 
 export function VerifyCodePage() {
     const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -78,7 +79,7 @@ export function VerifyCodePage() {
             </div>
 
             <img
-                src="/src/assets/gazella.png"
+                src={assets.gazella}
                 alt="Gazella"
                 style={{ width: '80px', marginBottom: '24px', objectFit: 'contain' }}
             />
