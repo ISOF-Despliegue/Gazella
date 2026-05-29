@@ -1,11 +1,13 @@
+const path = require('node:path');
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const http = require('node:http');
-const path = require('node:path');
 
 const isDev = !app.isPackaged;
 let staticServer;
-const gatewayUrl = process.env.GAZELLA_API_BASE_URL || 'http://localhost:4000';
+const gatewayUrl = isDev
+  ? process.env.GAZELLA_API_BASE_URL || 'http://localhost:4000'
+  : "http://localhost:4000";
 
 const proxiedPrefixes = [
   '/api/auth',
@@ -39,7 +41,7 @@ function startStaticServer() {
   const distDir = path.join(__dirname, '..', 'dist');
 
   staticServer = http.createServer((request, response) => {
-    const requestUrl = new URL(request.url || '/', 'http://127.0.0.1:4173');
+    const requestUrl = new URL(request.url || '/', 'http://localhost:4173');
 
     if (proxiedPrefixes.some((prefix) => requestUrl.pathname.startsWith(prefix))) {
       const proxyRequest = http.request(`${gatewayUrl}${requestUrl.pathname}${requestUrl.search}`, {
@@ -47,8 +49,8 @@ function startStaticServer() {
         headers: {
           ...request.headers,
           host: new URL(gatewayUrl).host,
-          origin: 'http://127.0.0.1:4173',
-          referer: 'http://127.0.0.1:4173/',
+          origin: 'http://localhost:4173',
+          referer: 'http://localhost:4173/',
         },
       }, (proxyResponse) => {
         const headers = { ...proxyResponse.headers };
@@ -89,7 +91,7 @@ function startStaticServer() {
   });
 
   return new Promise((resolve) => {
-    staticServer.listen(4173, '127.0.0.1', resolve);
+    staticServer.listen(4173, 'localhost', resolve);
   });
 }
 
@@ -102,15 +104,15 @@ async function createWindow() {
     backgroundColor: '#ffffff',
     webPreferences: {
       contextIsolation: true,
-      nodeIntegration: false,
+      nodeIntegration: false
     },
   });
 
   if (isDev) {
-    await mainWindow.loadURL('http://127.0.0.1:5173');
+    await mainWindow.loadURL('http://localhost:5173');
   } else {
     await startStaticServer();
-    await mainWindow.loadURL('http://127.0.0.1:4173');
+    await mainWindow.loadURL('http://localhost:4173');
   }
 }
 

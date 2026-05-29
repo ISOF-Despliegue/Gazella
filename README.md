@@ -59,7 +59,13 @@ El proyecto usa Electron para generar la version de Windows. El instalador se ge
 npm run release:win
 ```
 
-El archivo resultante queda en `release/`.
+Para generar ejecutables para Linux, puede usar:
+
+```bash
+npm run release:linux
+```
+
+Los archivos resultantes apareceran en `release/`.
 
 ## Android ##
 

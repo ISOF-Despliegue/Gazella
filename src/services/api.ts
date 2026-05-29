@@ -1,6 +1,7 @@
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ??
-    (window.location.protocol === "http:" || window.location.protocol === "https:" ? "" : "http://localhost:4000");
+export const API_BASE_URL =
+    globalThis.location.protocol === "http:" || globalThis.location.protocol === "https:" 
+        ? "" 
+        : "http://localhost:4000";
 
 export class ApiError extends Error {
     status: number;

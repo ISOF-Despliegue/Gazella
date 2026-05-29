@@ -4,7 +4,7 @@ const CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? "gazella-client";
 const RESOURCE = import.meta.env.VITE_OIDC_RESOURCE ?? "urn:gazella:client";
 const SCOPE = import.meta.env.VITE_OIDC_SCOPE ?? "openid email account gazella";
 const REDIRECT_URI =
-    import.meta.env.VITE_OIDC_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
+    import.meta.env.VITE_OIDC_REDIRECT_URI ?? `${globalThis.location.origin}/auth/callback`;
 
 type RegisterInput = {
     email: string;
@@ -16,10 +16,6 @@ type RegisterInput = {
 
 type InteractionResponse = {
     interactionId: string;
-};
-
-type LoginResponse = {
-    returnTo: string;
 };
 
 type TokenResponse = {
@@ -39,8 +35,8 @@ export type AuthSession = {
 
 function base64UrlEncode(bytes: ArrayBuffer | Uint8Array): string {
     const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-    const binary = String.fromCharCode(...view);
-    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    const binary = String.fromCodePoint(...view);
+    return btoa(binary).replaceAll('+', "-").replaceAll('/', "_").replace(/=+$/g, "");
 }
 
 function randomBase64Url(byteLength: number): string {
@@ -57,13 +53,13 @@ function decodeJwtPayload(token: string) {
     const [, payload] = token.split(".");
     if (!payload) return {};
 
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const normalized = payload.replaceAll('-', "+").replaceAll('_', "/");
     const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), "=");
     return JSON.parse(atob(padded));
 }
 
 function gatewayPath(url: string): string {
-    const parsed = new URL(url, window.location.origin);
+    const parsed = new URL(url, globalThis.location.origin);
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
@@ -155,6 +151,43 @@ export async function requestVerificationEmail(email: string) {
     });
 }
 
+async function resolveIdpFlow(response: any): Promise<string> {
+    if (response.customRedirectUrl) {
+        return response.customRedirectUrl;
+    }
+    
+    if (response.returnTo) {
+        const authResult = await apiRequest<any>(gatewayPath(response.returnTo), { 
+            method: "GET", 
+            skipAuth: true 
+        });
+        return resolveIdpFlow(authResult);
+    }
+
+    if (response.message && typeof response.message === "string" && response.message.includes('name="xsrf"')) {
+        console.warn("Detectado formulario de limpieza de sesión del IdP. Auto-enviando...");
+        
+        const xsrfMatch = response.message.match(/name="xsrf" value="([^"]+)"/);
+        const actionMatch = response.message.match(/action="([^"]+)"/);
+        
+        if (xsrfMatch && actionMatch) {
+            const xsrf = xsrfMatch[1];
+            const actionUrl = gatewayPath(actionMatch[1]);
+            
+            const confirmResponse = await apiRequest<any>(actionUrl, {
+                method: "POST",
+                skipAuth: true,
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `xsrf=${xsrf}&logout=yes`
+            });
+            
+            return resolveIdpFlow(confirmResponse);
+        }
+    }
+    
+    return "";
+}
+
 export async function loginWithPassword(email: string, password: string): Promise<AuthSession> {
     const codeVerifier = randomBase64Url(64);
     const codeChallenge = base64UrlEncode(await sha256(codeVerifier));
@@ -169,24 +202,31 @@ export async function loginWithPassword(email: string, password: string): Promis
         state,
         code_challenge: codeChallenge,
         code_challenge_method: "S256",
+        prompt: "login",
     });
 
     const interaction = await beginInteraction(authParams);
 
-    const loginResult = await apiRequest<LoginResponse>(
-        `/api/auth/interaction/${interaction.interactionId}`,
-        {
-            method: "POST",
-            skipAuth: true,
-            body: JSON.stringify({ email, password }),
-        },
-    );
+    let finalRedirectUrl = await resolveIdpFlow(interaction);
 
-    const authorizationResponse = await fetch(gatewayPath(loginResult.returnTo), {
-        redirect: "follow",
-        credentials: "include",
-    });
-    const callbackUrl = new URL(authorizationResponse.url);
+    if (!finalRedirectUrl && interaction.interactionId) {
+        const interactionResponse = await apiRequest<any>(
+            `/api/auth/interaction/${interaction.interactionId}/login`,
+            {
+                method: "POST",
+                skipAuth: true,
+                body: JSON.stringify({ email, password }),
+            },
+        );
+
+        finalRedirectUrl = await resolveIdpFlow(interactionResponse);
+    }
+
+    if (!finalRedirectUrl) {
+        throw new Error("El IdP no devolvió la URL de reanudación.");
+    }
+
+    const callbackUrl = new URL(finalRedirectUrl);
     const code = callbackUrl.searchParams.get("code");
     const returnedState = callbackUrl.searchParams.get("state");
 
@@ -195,11 +235,12 @@ export async function loginWithPassword(email: string, password: string): Promis
     }
 
     const tokenParams = new URLSearchParams({
-        grant_type: "authorization_code",
         client_id: CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
+        grant_type: "authorization_code",
         code,
         code_verifier: codeVerifier,
+        redirect_uri: REDIRECT_URI,
+        resource: RESOURCE
     });
 
     const tokenResponse = await apiRequest<TokenResponse>("/oidc/token", {
