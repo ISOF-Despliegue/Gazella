@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "electron:dev": "concurrently \"npm run dev -- --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
+    "electron:dev": "concurrently \"npm run dev -- --host localhost\" \"wait-on http://localhost:5173 && electron .\"",
     "release:win": "npm run build && set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win nsis",
+    "release:linux": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux",
     "cap:sync": "npm run build && cap sync android",
     "apk:debug": "powershell -ExecutionPolicy Bypass -File scripts/build-apk-debug.ps1",
     "lint": "eslint .",
@@ -28,6 +29,9 @@
     "win": {
       "target": "nsis",
       "signAndEditExecutable": false
+    },
+    "linux": {
+      "target": ["AppImage", "rpm", "deb"]
     },
     "nsis": {
       "oneClick": false,

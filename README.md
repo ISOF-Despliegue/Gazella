@@ -1,4 +1,5 @@
-# Gazella
+# Gazella #
+
 Cliente para el sistema de publicación y voluntariado para la conservación de la biodiversidad Gazella
 
 ## Descripción ##
@@ -8,10 +9,10 @@ Cliente para el sistema de publicación y voluntariado para la conservación de 
 ## Integrantes ##
 
 * Hernández Yong Abel
-* Ortega Teoba Leonardo Daniel 
-* Castillo Barradas Carlos 
+* Ortega Teoba Leonardo Daniel
+* Castillo Barradas Carlos
 
-## Tecnologías
+## Tecnologías ##
 
 * Electron
 * TypeScript
@@ -19,28 +20,28 @@ Cliente para el sistema de publicación y voluntariado para la conservación de 
 * Tailwind CSS
 * React Router DOM
 
-## Instalación
+## Instalación ##
 
 Clonar el repositorio:
 
-```
+```bash
 git clone <https://github.com/ISOF-Despliegue/Gazella>
 cd <NOMBRE_DEL_PROYECTO>
 ```
 
 Instalar dependencias:
 
-```
+```bash
 npm install
 ```
 
-## Ejecución
+## Ejecución ##
 
-```
+```bash
 npm run dev
 ```
 
-## Scripts principales
+## Scripts principales ##
 
 ```bash
 npm run build
@@ -50,7 +51,7 @@ npm run cap:sync
 npm run apk:debug
 ```
 
-## Aplicacion de escritorio
+## Aplicacion de escritorio ##
 
 El proyecto usa Electron para generar la version de Windows. El instalador se genera con:
 
@@ -60,7 +61,7 @@ npm run release:win
 
 El archivo resultante queda en `release/`.
 
-## Android
+## Android ##
 
 El proyecto usa Capacitor para generar Android. Para compilar el APK de depuracion:
 
