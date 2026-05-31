@@ -1,4 +1,5 @@
 import { type Article } from '../types/article';
+import { SafeImage } from './SafeImage';
 
 interface ArticleCardProps {
     article: Article;
@@ -20,14 +21,15 @@ export function ArticleCard({ article }: ArticleCardProps) {
                 backgroundColor: '#e5e7eb',
                 borderRadius: '4px',
                 flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                color: '#6b7280',
-                textAlign: 'center',
-                padding: '4px',
-            }}>Imagen alusiva al artículo</div>
+                overflow: 'hidden',
+            }}>
+                <SafeImage
+                    src={article.imageUrl}
+                    alt={article.title}
+                    variant="cover"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+            </div>
             <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}>{article.title}</h3>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>Descripción: {article.summary}</p>

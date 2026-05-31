@@ -1,4 +1,5 @@
 import { type Project } from '../types/project';
+import { SafeImage } from './SafeImage';
 
 interface ProjectCardProps {
     project: Project;
@@ -21,14 +22,15 @@ export function ProjectCard({ project, onEnroll }: ProjectCardProps) {
                 backgroundColor: '#e5e7eb',
                 borderRadius: '4px',
                 flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                color: '#6b7280',
-                textAlign: 'center',
-                padding: '4px',
-            }}>Imagen alusiva al proyecto</div>
+                overflow: 'hidden',
+            }}>
+                <SafeImage
+                    src={project.imageUrl}
+                    alt={project.title}
+                    variant="cover"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+            </div>
             <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}>{project.title}</h3>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>Descripción: {project.description}</p>
@@ -37,15 +39,15 @@ export function ProjectCard({ project, onEnroll }: ProjectCardProps) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                     <p style={{ fontSize: '12px', color: '#6b7280' }}>Voluntarios: {project.volunteersEnrolled} / {project.volunteersMax}</p>
                     <button
-                    onClick={() => onEnroll?.(project)}
-                    style={{
-                        fontSize: '12px',
-                        padding: '4px 12px',
-                        border: '1px solid #333',
-                        borderRadius: '4px',
-                        backgroundColor: 'white',
-                        cursor: 'pointer',
-                    }}>Inscribirme</button>
+                        onClick={() => onEnroll?.(project)}
+                        style={{
+                            fontSize: '12px',
+                            padding: '4px 12px',
+                            border: '1px solid #333',
+                            borderRadius: '4px',
+                            backgroundColor: 'white',
+                            cursor: 'pointer',
+                        }}>Inscribirme</button>
                 </div>
             </div>
         </div>

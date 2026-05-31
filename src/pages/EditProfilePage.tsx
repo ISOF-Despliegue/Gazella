@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     getLocalProfile,
@@ -9,7 +9,9 @@ import {
 } from '../services/accounts';
 import { getCurrentSession, type AuthSession } from '../services/auth';
 import { BackButton } from '../components/BackButton';
+import { SafeImage } from '../components/SafeImage';
 import { assets } from '../assets/assets';
+import { uploadMedia, MediaUploadError } from '../services/media';
 
 function getFullName(profile: EditableAccountProfile | null, session: AuthSession | null) {
     if (profile?.name) {
@@ -17,7 +19,6 @@ function getFullName(profile: EditableAccountProfile | null, session: AuthSessio
             .filter(Boolean)
             .join(' ');
     }
-
     return session?.email?.split('@')[0] ?? 'usuario';
 }
 
@@ -32,6 +33,8 @@ export function EditProfilePage() {
     const [pfpUri, setPfpUri] = useState('');
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         const currentSession = getCurrentSession();
@@ -56,7 +59,6 @@ export function EditProfilePage() {
 
     useEffect(() => {
         if (!profile) return;
-
         setName(profile.name ?? '');
         setParentalSurname(profile.parentalSurname ?? '');
         setMaternalSurname(profile.maternalSurname ?? '');
@@ -71,6 +73,29 @@ export function EditProfilePage() {
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'U';
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        setError('');
+
+        try {
+            const result = await uploadMedia(file);
+            setPfpUri(result.url);
+        } catch (err) {
+            const message = err instanceof MediaUploadError
+                ? err.message
+                : 'No se pudo subir la imagen. Intenta de nuevo.';
+            setError(message);
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
 
     const handleSubmit = async () => {
         setError('');
@@ -148,26 +173,51 @@ export function EditProfilePage() {
                             height: '118px',
                             borderRadius: '50%',
                             border: '1px solid #1f2937',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
                             overflow: 'hidden',
                         }}>
-                            {pfpUri ? (
-                                <img src={pfpUri} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                                <span style={{ fontSize: '14px' }}>foto perfil</span>
-                            )}
+                            <SafeImage
+                                src={pfpUri}
+                                alt={displayName}
+                                variant="avatar"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                         </div>
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            style={{ display: 'none' }}
+                            onChange={handleFileChange}
+                        />
+
                         <button
-                            onClick={() => setPfpUri(window.prompt('URL de la foto de perfil') ?? pfpUri)}
-                            style={{ border: '1px solid #1f2937', backgroundColor: 'white', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer', fontSize: '15px' }}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            style={{
+                                border: '1px solid #1f2937',
+                                backgroundColor: 'white',
+                                borderRadius: '4px',
+                                padding: '5px 10px',
+                                cursor: isUploading ? 'not-allowed' : 'pointer',
+                                fontSize: '15px',
+                                opacity: isUploading ? 0.65 : 1,
+                            }}
                         >
-                            Cambiar foto
+                            {isUploading ? 'Subiendo...' : 'Cambiar foto'}
                         </button>
+
                         <button
                             onClick={() => setPfpUri('')}
-                            style={{ border: '1px solid #1f2937', backgroundColor: 'white', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer', fontSize: '15px' }}
+                            disabled={isUploading}
+                            style={{
+                                border: '1px solid #1f2937',
+                                backgroundColor: 'white',
+                                borderRadius: '4px',
+                                padding: '5px 10px',
+                                cursor: 'pointer',
+                                fontSize: '15px',
+                            }}
                         >
                             Eliminar foto
                         </button>

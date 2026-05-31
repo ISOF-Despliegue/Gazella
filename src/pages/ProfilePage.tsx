@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getLocalProfile, getMyAccount, saveLocalProfile, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, type AuthSession } from '../services/auth';
 import { BackButton } from '../components/BackButton';
+import { SafeImage } from '../components/SafeImage';
 import { assets } from '../assets/assets';
 
 const MOCK_PROFILE_ARTICLES = [
@@ -16,7 +17,6 @@ function getFullName(profile: EditableAccountProfile | null, session: AuthSessio
             .filter(Boolean)
             .join(' ');
     }
-
     return session?.email?.split('@')[0] ?? 'usuario';
 }
 
@@ -94,17 +94,15 @@ export function ProfilePage() {
                                 height: '84px',
                                 borderRadius: '50%',
                                 border: '1px solid #1f2937',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
                                 overflow: 'hidden',
                                 flexShrink: 0,
                             }}>
-                                {profile?.pfpUri ? (
-                                    <img src={profile.pfpUri} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <span style={{ fontSize: '14px' }}>foto perfil</span>
-                                )}
+                                <SafeImage
+                                    src={profile?.pfpUri}
+                                    alt={displayName}
+                                    variant="avatar"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
                             </div>
                             <div>
                                 <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '6px' }}>{displayName}</h2>
