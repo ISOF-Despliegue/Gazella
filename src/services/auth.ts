@@ -157,10 +157,22 @@ async function resolveIdpFlow(response: any): Promise<string> {
     }
     
     if (response.returnTo) {
-        const authResult = await apiRequest<any>(gatewayPath(response.returnTo), { 
-            method: "GET", 
-            skipAuth: true 
+        const path = gatewayPath(response.returnTo);
+        
+        const rawResponse = await fetch(path, {
+            method: "GET",
+            credentials: "include",
         });
+        
+        if (rawResponse.url.includes("/auth/callback")) {
+            return rawResponse.url;
+        }
+        
+        const contentType = rawResponse.headers.get("content-type") ?? "";
+        const authResult = contentType.includes("application/json")
+            ? await rawResponse.json()
+            : { message: await rawResponse.text() };
+        
         return resolveIdpFlow(authResult);
     }
 
@@ -210,16 +222,30 @@ export async function loginWithPassword(email: string, password: string): Promis
     let finalRedirectUrl = await resolveIdpFlow(interaction);
 
     if (!finalRedirectUrl && interaction.interactionId) {
-        const interactionResponse = await apiRequest<any>(
+        const loginResponse = await fetch(
             `/api/auth/interaction/${interaction.interactionId}/login`,
             {
                 method: "POST",
-                skipAuth: true,
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
             },
         );
 
-        finalRedirectUrl = await resolveIdpFlow(interactionResponse);
+        if (!loginResponse.ok && loginResponse.status !== 303) {
+            const errorData = await loginResponse.json().catch(() => ({})) as { message?: string };
+            throw new Error(errorData.message ?? "Error al iniciar sesión");
+        }
+
+        if (loginResponse.url.includes("/auth/callback")) {
+            finalRedirectUrl = loginResponse.url;
+        } else {
+            const contentType = loginResponse.headers.get("content-type") ?? "";
+            const interactionResponse = contentType.includes("application/json")
+                ? await loginResponse.json()
+                : { message: await loginResponse.text() };
+            finalRedirectUrl = await resolveIdpFlow(interactionResponse);
+        }
     }
 
     if (!finalRedirectUrl) {
