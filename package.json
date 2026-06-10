@@ -31,7 +31,11 @@
       "signAndEditExecutable": false
     },
     "linux": {
-      "target": ["AppImage", "rpm", "deb"]
+      "target": [
+        "AppImage",
+        "rpm",
+        "deb"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -53,6 +57,7 @@
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
     "electron": "^42.2.0",
