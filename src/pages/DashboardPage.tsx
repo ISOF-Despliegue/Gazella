@@ -6,17 +6,13 @@ import { type Article } from '../types/article';
 import { type Project } from '../types/project';
 import { getLocalProfile, getMyAccount, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, logout, type AuthSession } from '../services/auth';
+import { getUpcomingProjects } from '../services/projects';
 import { BackButton } from '../components/BackButton';
 import { assets } from '../assets/assets';
 
 const MOCK_ARTICLES: Article[] = [
     { id: 1, title: 'La Sexta Extincion Masiva', author: 'Abel Yong', summary: 'La extincion es un problema...', likes: 0 },
     { id: 2, title: 'La Basura nos esta Acabando', author: 'Carlos Castillo', summary: 'Basura en los oceanos...', likes: 0 },
-];
-
-const MOCK_PROJECTS: Project[] = [
-    { id: 1, title: 'Recoleccion de Tapas PET', description: 'Recolectaremos tapas y...', location: 'Av. Xalapa #123', date: '20 de marzo de 2026', volunteersEnrolled: 15, volunteersMax: 20 },
-    { id: 2, title: 'Recoleccion de Basura', description: 'Recolectaremos basura y...', location: 'Av. Xalapa #123', date: '22 de marzo de 2026', volunteersEnrolled: 11, volunteersMax: 20 },
 ];
 
 function getFullName(profile: EditableAccountProfile | null, session: AuthSession | null) {
@@ -34,6 +30,8 @@ export function DashboardPage() {
     const [session, setSession] = useState<AuthSession | null>(null);
     const [profile, setProfile] = useState<EditableAccountProfile | null>(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+    const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+    const [projects, setProjects] = useState<Project[]>([]);
 
     useEffect(() => {
         const currentSession = getCurrentSession();
@@ -52,6 +50,11 @@ export function DashboardPage() {
             })
             .catch(() => undefined)
             .finally(() => setIsLoadingProfile(false));
+        
+        getUpcomingProjects()
+            .then(setProjects)
+            .catch(() => setProjects([]))
+            .finally(() => setIsLoadingProjects(false));
     }, [navigate]);
 
     const displayName = useMemo(() => getFullName(profile, session), [profile, session]);
@@ -67,6 +70,8 @@ export function DashboardPage() {
         logout();
         navigate('/login');
     };
+
+    const isOrganizer = session?.roles?.includes('organizer');
 
     return (
         <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
@@ -182,7 +187,9 @@ export function DashboardPage() {
                     {[
                         { label: 'Escribir nuevo articulo', path: '/nuevo-articulo' },
                         { label: 'Mis articulos', path: '/articulos' },
-                        { label: 'Mis proyectos', path: '/mis-proyectos' },
+                        isOrganizer
+                            ? { label: 'Mis proyectos', path: '/mis-proyectos' }
+                            : { label: 'Mis proyectos', path: '/mis-inscripciones' },
                     ].map((item) => (
                         <button
                             key={item.label}
@@ -233,11 +240,29 @@ export function DashboardPage() {
 
                     <section style={{ flex: 1 }}>
                         <h2 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.05em' }}>PROXIMOS PROYECTOS DE VOLUNTARIADO</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {MOCK_PROJECTS.map((project) => (
-                                <ProjectCard key={project.id} project={project} />
-                            ))}
-                        </div>
+                        {isLoadingProjects ? (
+                            <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
+                                Cargando proyectos...
+                            </div>
+                        ) : projects.length === 0 ? (
+                            <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '14px', border: '1px dashed #e5e7eb', borderRadius: '8px' }}>
+                                No hay proyectos disponibles por el momento.
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {projects.map((project) => (
+                                    <div key={project.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/proyectos/${project.id}`)}>
+                                        <ProjectCard project={project} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <button
+                            onClick={() => navigate('/proyectos')}
+                            style={{ marginTop: '16px', padding: '8px 20px', border: '1px solid #333', borderRadius: '4px', backgroundColor: 'white', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Ver todos los proyectos
+                        </button>
                     </section>
                 </div>
             </div>
