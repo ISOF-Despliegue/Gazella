@@ -10,7 +10,7 @@ function createProxy() {
         target: TARGET,
         changeOrigin: true,
         configure: (proxy: any) => {
-            proxy.on('proxyReq', (proxyReq: Request, req: Request, _res: Response) => {
+            proxy.on('proxyReq', (_proxyReq: Request, req: Request, _res: Response) => {
                 console.log('Proxying request to backend:', req.method, req.url);
             });
             proxy.on('proxyRes', (proxyRes: any, req: Request) => {
