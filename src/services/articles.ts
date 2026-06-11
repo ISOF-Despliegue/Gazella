@@ -1,5 +1,6 @@
 import { apiRequest } from "./api";
-import { type Article } from "../types/article";
+import { type Article, type Category } from "../types/article";
+import type { OutputData } from "@editorjs/editorjs";
 
 type ArticleSearchEntry = {
     id: string;
@@ -11,6 +12,23 @@ type ArticleSearchEntry = {
 type ArticleSearchResponse = {
     entries: ArticleSearchEntry[];
 };
+
+export type Draft = {
+    id: string | undefined;
+    title: string;
+    coverUri: string;
+    summary: string;
+    categoryId: string;
+    authorId: string;
+    authorName: string;
+    authorPfpUri: string;
+    content: string
+}
+
+export type SubmitDraftResponse = {
+    message: string;
+    id: string;
+}
 
 export async function getFeaturedArticles(): Promise<Article[]> {
     const searchParams = new URLSearchParams({
@@ -30,4 +48,26 @@ export async function getFeaturedArticles(): Promise<Article[]> {
         summary: entry.summary || "Sin resumen disponible",
         likes: 0,
     }));
+}
+
+export async function getCategories(): Promise<Category[]> {
+    const response = await apiRequest<Category[]>("/articles/categories", {
+        skipAuth: true
+    });
+
+    return response ?? [];
+}
+
+export async function submitDraft(draft: Draft) {
+    return apiRequest<SubmitDraftResponse>("/articles/drafts", {
+        method: "POST",
+        body: JSON.stringify(draft)
+    });
+}
+
+export async function publishDraft(draft: Draft) {
+    return apiRequest<{ message: string }>(`/articles/drafts/${draft.id}/publications`, {
+        method: "POST",
+        body: JSON.stringify(draft)
+    });
 }

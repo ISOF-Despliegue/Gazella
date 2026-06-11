@@ -12,7 +12,7 @@ export class MediaUploadError extends Error {
     }
 }
 
-const ACCEPTED_TYPES = [
+const ACCEPTED_TYPES = new Set([
     "image/jpeg",
     "image/png",
     "image/webp",
@@ -20,12 +20,12 @@ const ACCEPTED_TYPES = [
     "video/mp4",
     "video/webm",
     "video/quicktime",
-];
+]);
 
 const MAX_SIZE_BYTES = 50 * 1024 * 1024;
 
 export function validateFile(file: File): void {
-    if (!ACCEPTED_TYPES.includes(file.type)) {
+    if (!ACCEPTED_TYPES.has(file.type)) {
         throw new MediaUploadError(
             `Tipo de archivo no permitido. Tipos aceptados: JPEG, PNG, WEBP, GIF, MP4, WEBM, MOV`
         );

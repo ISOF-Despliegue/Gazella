@@ -8,6 +8,7 @@ import { ArticlesListPage } from "../pages/ArticlesListPage";
 import { AuthCallbackPage } from "../pages/AuthCallbackPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import { EditProfilePage } from "../pages/EditProfilePage";
+import { WriteArticlePage } from "../pages/WriteArticlePage";
 export function AppRouter() {
     return (
         <BrowserRouter>
@@ -22,6 +23,7 @@ export function AppRouter() {
                 <Route path="/perfil" element={<ProfilePage />} />
                 <Route path="/perfil/editar" element={<EditProfilePage />} />
                 <Route path="/articulos" element={<ArticlesListPage />} />
+                <Route path="/nuevo-articulo" element={<WriteArticlePage/>} />
             </Routes>
         </BrowserRouter>
     );

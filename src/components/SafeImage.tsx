@@ -48,7 +48,7 @@ export function SafeImage({
     style,
     placeholderStyle,
     ...rest
-}: SafeImageProps) {
+}: Readonly<SafeImageProps>) {
     const safeUrl = getSafeImageUrl(src);
     const [hasError, setHasError] = useState(false);
 
