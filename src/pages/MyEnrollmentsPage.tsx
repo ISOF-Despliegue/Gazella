@@ -37,8 +37,6 @@ export function MyEnrollmentsPage() {
             .finally(() => setIsLoading(false));
     }, [navigate]);
 
-    const now = new Date();
-
     // Categorize using enrollment_status + project_status to determine "concluido"
     const categorized = {
         activos: enrollments.filter((e) => {

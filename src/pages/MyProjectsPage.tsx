@@ -239,7 +239,7 @@ export function MyProjectsPage() {
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                                 <span style={{ fontSize: "14px", color: "#6b7280", padding: "4px 12px", backgroundColor: "#f3f4f6", borderRadius: "9999px" }}>
-                                    {confirmedCount}/{volunteersMax} inscritos
+                                    {confirmedCount}/{volunteersMax} inscritos · {volunteersTotal} total
                                 </span>
                                 <button onClick={() => setVolunteersProjectId(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: "#9ca3af" }}>✕</button>
                             </div>
@@ -248,7 +248,7 @@ export function MyProjectsPage() {
                         <div style={{ overflowY: "auto", flex: 1 }}>
                             {volunteersLoading ? (
                                 <div style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>Cargando voluntarios...</div>
-                            ) : volunteers.length === 0 ? (
+                            ) : filteredVolunteers.length === 0 ? (
                                 <div style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No hay voluntarios registrados.</div>
                             ) : (
                                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -260,7 +260,7 @@ export function MyProjectsPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {volunteers.map((v) => (
+                                        {filteredVolunteers.map((v) => (
                                             <tr key={v.volunteer_id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                                                 <td style={{ padding: "12px 16px", fontSize: "13px", color: "#6b7280" }}>{v.email}</td>
                                                 <td style={{ padding: "12px 16px", fontSize: "13px", color: "#6b7280" }}>{formatDate(v.enrolled_at)}</td>

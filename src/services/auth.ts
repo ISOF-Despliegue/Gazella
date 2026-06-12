@@ -12,6 +12,7 @@ type RegisterInput = {
     name: string;
     parentalSurname?: string;
     maternalSurname?: string;
+    role?: "volunteer" | "editor";
 };
 
 type InteractionResponse = {
@@ -125,6 +126,13 @@ export function getCurrentSession(): AuthSession | null {
 export function logout() {
     localStorage.removeItem("gazella_access_token");
     localStorage.removeItem("gazella_access_token_expires_at");
+}
+
+export function hasAnyRole(session: AuthSession | null, allowedRoles: string[]) {
+    if (!session) return false;
+
+    const normalizedRoles = session.roles.map((role) => role.toLowerCase());
+    return allowedRoles.some((role) => normalizedRoles.includes(role.toLowerCase()));
 }
 
 export async function register(input: RegisterInput) {

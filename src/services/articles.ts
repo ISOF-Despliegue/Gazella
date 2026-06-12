@@ -2,8 +2,11 @@ import { apiRequest } from "./api";
 import {
     type Article,
     type ArticleSearchResult,
+    type AuthorStats,
     type Category,
     type PendingArticle,
+    type PublishedArticle,
+    type PublishedArticlesResponse,
     type RejectArticleRequest,
 } from "../types/article";
 
@@ -120,6 +123,103 @@ export async function publishDraft(draft: Draft) {
         method: "POST",
         body: JSON.stringify(draft)
     });
+}
+
+const PUBLISHED_ARTICLES_STUB: PublishedArticle[] = [
+    {
+        id: "published-1",
+        title: "La importancia de separar basura",
+        authorName: "Carlos Castillo",
+        publishedAt: "2026-04-13T10:30:00.000Z",
+        likesCount: 12,
+        commentsCount: 7,
+        status: "published",
+    },
+    {
+        id: "published-2",
+        title: "Ecosistemas marinos",
+        authorName: "Leonardo Ortega",
+        publishedAt: "2026-04-12T16:10:00.000Z",
+        likesCount: 18,
+        commentsCount: 3,
+        status: "published",
+    },
+    {
+        id: "published-3",
+        title: "Especies en peligro en México",
+        authorName: "Abel Yong",
+        publishedAt: "2026-04-05T09:00:00.000Z",
+        likesCount: 8,
+        commentsCount: 2,
+        status: "published",
+    },
+    {
+        id: "published-4",
+        title: "Deforestación y clima",
+        authorName: "Luis Flores",
+        publishedAt: "2026-04-01T12:45:00.000Z",
+        likesCount: 3,
+        commentsCount: 1,
+        status: "deleted",
+    },
+];
+
+const AUTHOR_STATS_STUB: AuthorStats = {
+    totalLikes: 42,
+    totalComments: 14,
+    publishedArticlesCount: 5,
+    engagementRate: 8.4,
+    topArticles: [
+        { id: "published-1", title: "La importancia de separar basura", likesCount: 24, commentsCount: 7 },
+        { id: "published-2", title: "Ecosistemas marinos y carbono", likesCount: 18, commentsCount: 3 },
+        { id: "published-3", title: "Especies en peligro en México", likesCount: 0, commentsCount: 0 },
+    ],
+    recentActivity: {
+        latestCommentId: "comment-1",
+        latestCommentArticleId: "published-1",
+        latestCommentPostedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        likesToday: 3,
+    },
+};
+
+export async function getPublishedArticles(): Promise<PublishedArticlesResponse> {
+    try {
+        return await apiRequest<PublishedArticlesResponse>("/articles/publications?pageIndex=1&pageSize=50");
+    } catch {
+        return {
+            publishedArticles: PUBLISHED_ARTICLES_STUB.map((article) => ({ ...article })),
+            totalEntries: PUBLISHED_ARTICLES_STUB.length,
+            currentPage: 1,
+            pageCount: 1,
+            pageSize: PUBLISHED_ARTICLES_STUB.length,
+        };
+    }
+}
+
+export async function deletePublishedArticle(articleId: string): Promise<{ message: string }> {
+    try {
+        return await apiRequest<{ message: string }>(`/articles/publications/${articleId}`, {
+            method: "DELETE",
+        });
+    } catch {
+        const article = PUBLISHED_ARTICLES_STUB.find(({ id }) => id === articleId);
+        if (article) {
+            article.status = "deleted";
+        }
+        return { message: "Artículo eliminado correctamente." };
+    }
+}
+
+export async function getMyAuthorStats(): Promise<AuthorStats> {
+    try {
+        return await apiRequest<AuthorStats>("/articles/my-stats");
+    } catch {
+        return {
+            ...AUTHOR_STATS_STUB,
+            topArticles: AUTHOR_STATS_STUB.topArticles.map((article) => ({ ...article })),
+            recentActivity: { ...AUTHOR_STATS_STUB.recentActivity },
+        };
+    }
 }
 
 const PENDING_ARTICLES_STUB: PendingArticle[] = [

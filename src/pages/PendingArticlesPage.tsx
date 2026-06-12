@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Header } from "../components/Header";
+import { BackButton } from "../components/BackButton";
+import { assets } from "../assets/assets";
 import { getPendingArticles } from "../services/articles";
 import type { PendingArticle } from "../types/article";
 
@@ -40,74 +41,83 @@ export function PendingArticlesPage() {
     }, [articles, query]);
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <Header />
-            <main className="mx-auto w-full max-w-7xl p-5 sm:p-8 lg:p-10">
-                <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
+        <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+            <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 40px", backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <BackButton fallbackPath="/dashboard" />
+                    <img src={assets.gazella} alt="Gazella" style={{ width: "70px", objectFit: "contain" }} />
+                    <h1 style={{ fontSize: "22px", fontWeight: "bold", lineHeight: 1.2 }}>
+                        Conservación de<br />la biodiversidad
+                    </h1>
+                </div>
+            </nav>
+
+            <main style={{ maxWidth: "960px", margin: "32px auto", padding: "0 24px" }}>
+                <section style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "28px" }}>
                     {notice && (
-                        <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
+                        <div style={{ padding: "12px 16px", borderRadius: "8px", backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", color: "#15803d", fontSize: "14px", marginBottom: "18px" }}>
                             {notice}
                         </div>
                     )}
-                    <div className="mb-8 flex flex-col justify-between gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-center">
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "18px", marginBottom: "24px" }}>
                         <div>
-                            <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-green-700">Panel de editor</p>
-                            <h1 className="text-3xl font-bold text-gray-900">Artículos pendientes de revisión</h1>
-                            <p className="mt-2 text-sm text-gray-500">
+                            <h2 style={{ fontSize: "26px", fontWeight: "bold", marginBottom: "6px" }}>
+                                Artículos pendientes de revisión
+                            </h2>
+                            <p style={{ color: "#6b7280", fontSize: "14px" }}>
                                 Revisa el contenido enviado antes de aprobar su publicación.
                             </p>
                         </div>
-                        <span className="w-fit rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800">
+                        <span style={{ padding: "6px 14px", borderRadius: "9999px", backgroundColor: "#fef3c7", color: "#92400e", fontWeight: "700", fontSize: "13px" }}>
                             {articles.length} pendientes
                         </span>
                     </div>
 
-                    <div className="mb-5 flex justify-end">
-                        <label className="relative w-full sm:max-w-sm">
-                            <span className="sr-only">Buscar artículos</span>
-                            <input
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
-                                placeholder="Buscar por título, autor o categoría"
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
-                            />
-                        </label>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "18px" }}>
+                        <input
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder="Buscar por título, autor o categoría"
+                            style={{ width: "320px", border: "1px solid #d1d5db", borderRadius: "6px", padding: "11px 14px", outline: "none", fontSize: "14px" }}
+                        />
                     </div>
 
                     {status ? (
-                        <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center text-gray-500">
+                        <div style={{ textAlign: "center", padding: "60px", color: "#6b7280", border: "1px dashed #e5e7eb", borderRadius: "10px" }}>
                             {status}
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[760px] border-collapse text-left">
+                        <div style={{ overflowX: "auto" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "760px" }}>
                                 <thead>
-                                    <tr className="border-b-2 border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                                        <th className="px-3 py-4">Título</th>
-                                        <th className="px-3 py-4">Autor</th>
-                                        <th className="px-3 py-4">Categoría</th>
-                                        <th className="px-3 py-4">Enviado</th>
-                                        <th className="px-3 py-4 text-right">Acciones</th>
+                                    <tr>
+                                        {["Título", "Autor", "Categoría", "Enviado", "Acciones"].map((heading) => (
+                                            <th
+                                                key={heading}
+                                                style={{ textAlign: heading === "Acciones" ? "right" : "left", padding: "12px 10px", fontSize: "13px", fontWeight: "700", color: "#111827", borderBottom: "1px solid #e5e7eb" }}
+                                            >
+                                                {heading}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredArticles.map((article) => (
-                                        <tr key={article.id} className="border-b border-gray-100 transition hover:bg-green-50/50">
-                                            <td className="px-3 py-5">
-                                                <p className="font-semibold text-gray-900">{article.title}</p>
-                                                <p className="mt-1 max-w-md truncate text-xs text-gray-500">{article.summary}</p>
+                                        <tr key={article.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                                            <td style={{ padding: "14px 10px" }}>
+                                                <p style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>{article.title}</p>
+                                                <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px", maxWidth: "360px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                    {article.summary}
+                                                </p>
                                             </td>
-                                            <td className="px-3 py-5 text-sm text-gray-700">{article.authorName}</td>
-                                            <td className="px-3 py-5">
-                                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                                                    {article.categoryName}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 py-5 text-sm text-gray-600">{formatDate(article.submittedAt)}</td>
-                                            <td className="px-3 py-5 text-right">
+                                            <td style={{ padding: "14px 10px", fontSize: "14px" }}>{article.authorName}</td>
+                                            <td style={{ padding: "14px 10px", fontSize: "14px" }}>{article.categoryName}</td>
+                                            <td style={{ padding: "14px 10px", fontSize: "14px" }}>{formatDate(article.submittedAt)}</td>
+                                            <td style={{ padding: "14px 10px", textAlign: "right" }}>
                                                 <button
                                                     onClick={() => navigate(`/editor/articulos/${article.id}/revision`)}
-                                                    className="rounded-lg bg-green-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-800"
+                                                    style={{ border: "1px solid #15803d", backgroundColor: "#bbf7d0", color: "#14532d", borderRadius: "4px", padding: "6px 12px", cursor: "pointer", fontWeight: "700" }}
                                                 >
                                                     Revisar
                                                 </button>
@@ -116,8 +126,10 @@ export function PendingArticlesPage() {
                                     ))}
                                 </tbody>
                             </table>
-                            {!filteredArticles.length && (
-                                <p className="py-10 text-center text-sm text-gray-500">No hay resultados para esa búsqueda.</p>
+                            {filteredArticles.length === 0 && (
+                                <div style={{ textAlign: "center", padding: "44px", color: "#6b7280" }}>
+                                    No hay resultados para esa búsqueda.
+                                </div>
                             )}
                         </div>
                     )}
