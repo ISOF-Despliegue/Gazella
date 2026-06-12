@@ -9,6 +9,7 @@ import { AuthCallbackPage } from "../pages/AuthCallbackPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import { EditProfilePage } from "../pages/EditProfilePage";
 import { WriteArticlePage } from "../pages/WriteArticlePage";
+import { ReadArticlePage } from "../pages/ReadArticlePage";
 import { PendingArticlesPage } from "../pages/PendingArticlesPage";
 import { ReviewArticlePage } from "../pages/ReviewArticlePage";
 import { ProjectsListPage } from "../pages/ProjectsListPage";
@@ -32,6 +33,7 @@ export function AppRouter() {
                 <Route path="/perfil/editar" element={<EditProfilePage />} />
                 <Route path="/articulos" element={<ArticlesListPage />} />
                 <Route path="/nuevo-articulo" element={<WriteArticlePage />} />
+                <Route path="/articulo/:articleId" element={<ReadArticlePage />} />
                 <Route path="/editor/articulos" element={<PendingArticlesPage />} />
                 <Route path="/editor/articulos/:articleId/revision" element={<ReviewArticlePage />} />
                 <Route path="/proyectos" element={<ProjectsListPage />} />

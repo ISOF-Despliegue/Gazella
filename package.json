@@ -52,6 +52,7 @@
     "@editorjs/list": "^2.0.9",
     "@editorjs/paragraph": "^2.11.7",
     "@editorjs/underline": "^1.2.1",
+    "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.2.2",
     "editorjs-text-alignment-blocktune": "^1.0.3",
     "react": "^19.2.4",
