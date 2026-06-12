@@ -87,7 +87,7 @@ export function CreateProjectPage() {
         formData.append("file", file);
         try {
             const token = localStorage.getItem("gazella_access_token");
-            const response = await fetch("/media/upload", {
+            const response = await fetch("/media", {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token ?? ""}` },
                 body: formData,
