@@ -7,6 +7,7 @@ import Underline from "@editorjs/underline";
 import ImageTool from "@editorjs/image";
 // @ts-ignore
 import AlignmentTuneTool from "editorjs-text-alignment-blocktune";
+import { uploadMedia } from "../services/media";
 
 interface EditorProps {
   initialData?: OutputData;
@@ -27,82 +28,71 @@ export const Editor = ({ initialData, onChange }: EditorProps) => {
         tunes: ['alignmentTune'],
 
         tools: {
-            alignmentTune: {
-                class: AlignmentTuneTool,
-                config: {
-                    default: "left",
-                    blocks: {
-                    header: 'left',
-                    list: 'left'
-                }
-                },
+          alignmentTune: {
+            class: AlignmentTuneTool,
+            config: {
+              default: "left",
+                blocks: {
+                header: 'left',
+                list: 'left'
+              }
             },
-            paragraph: {
-                class: Paragraph as unknown as ToolConstructable,
-                inlineToolbar: true,
-                tunes: ['alignmentTune'],
-            },
+          },
+          paragraph: {
+            class: Paragraph as unknown as ToolConstructable,
+            inlineToolbar: true,
+            tunes: ['alignmentTune'],
+          },
             
-            header: {
-                class: Header,
-                inlineToolbar: ['link', 'underline'],
-                tunes: ['alignmentTune'],
-                config: {
-                placeholder: 'Escribe un encabezado...',
-                levels: [2, 3, 4],
-                defaultLevel: 2
-                }
-            },
-            
-            list: {
-                class: List,
-                inlineToolbar: ['link', 'underline', 'bold', 'italic'],
-                config: {
-                defaultStyle: 'unordered'
-                }
-            },
-            
-            underline: {
-                class: Underline,
-                shortcut: 'CMD+U',
-            },
-            
-            image: {
-                class: ImageTool,
-                config: {
-                uploader: {
-                    // Esta función intercepta la imagen antes de insertarla
-                    async uploadByFile(file: File) {
-                    try {
-                        // AQUÍ VA LA LÓGICA DE TU BUCKET EN GAZELLA
-                        // Ejemplo conceptual:
-                        // const formData = new FormData();
-                        // formData.append('image', file);
-                        // const response = await api.post('/media/upload', formData);
-                        // const bucketUrl = response.data.url;
-
-                        // Simularemos una subida exitosa para propósitos de desarrollo inicial
-                        console.log('Subiendo archivo al bucket...', file.name);
-                        const mockBucketUrl = URL.createObjectURL(file); // Quitar en producción
-
-                        return {
-                        success: 1,
-                        file: {
-                            url: mockBucketUrl,
-                            // url: bucketUrl // (Usar esto en producción)
-                        }
-                        };
-                    } catch (error) {
-                        console.error('Error subiendo la imagen:', error);
-                        return {
-                        success: 0,
-                        message: 'Error al subir la imagen al servidor'
-                        };
-                    }
-                    }
-                }
-                }
+          header: {
+            class: Header,
+            inlineToolbar: ['link', 'underline'],
+            tunes: ['alignmentTune'],
+            config: {
+              placeholder: 'Escribe un encabezado...',
+              levels: [2, 3, 4],
+              defaultLevel: 2
             }
+          },
+            
+          list: {
+            class: List,
+            inlineToolbar: ['link', 'underline', 'bold', 'italic'],
+            config: {
+              defaultStyle: 'unordered'
+              }
+          },
+            
+          underline: {
+            class: Underline,
+            shortcut: 'CMD+U',
+          },
+            
+          image: {
+            class: ImageTool,
+            config: {
+              uploader: {
+                async uploadByFile(file: File) {
+                  try {
+                    const result = await uploadMedia(file);
+                    const bucketUrl = result.url;
+                    return {
+                      success: 1,
+                      file: {
+                        url: bucketUrl,
+                      }
+                    };
+                  } catch (error) {
+                    console.error('Error subiendo la imagen:', error);
+                    return {
+                      success: 0,
+                      message: 'Error al subir la imagen al servidor'
+                      };
+                  }
+                }
+              }
+            }
+          }
         },
 
         onChange: async () => {

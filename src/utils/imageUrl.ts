@@ -1,7 +1,7 @@
 const ALLOWED_ORIGINS: string[] = [
     "http://localhost:4000",
     "http://localhost:8000",
-    "http://localhost:9000",
+    "http://localhost:10000",
     "https://gazella.com",
 ];
 

@@ -21,7 +21,9 @@ function getFullName(profile: EditableAccountProfile | null, session: AuthSessio
 }
 
 function formatMemberSince(date?: string) {
-    if (!date) return 'Miembro reciente';
+    if (!date) {
+        return 'Miembro reciente';
+    }
     return `Miembro desde ${new Intl.DateTimeFormat('es-MX', { month: 'short', year: 'numeric' }).format(new Date(date))}`;
 }
 

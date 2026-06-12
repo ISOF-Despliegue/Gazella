@@ -1,6 +1,5 @@
 import { apiRequest } from "./api";
-import { type Article, type Category } from "../types/article";
-import type { OutputData } from "@editorjs/editorjs";
+import { type Article, type ArticleSearchResult, type Category } from "../types/article";
 
 type ArticleSearchEntry = {
     id: string;
@@ -12,6 +11,16 @@ type ArticleSearchEntry = {
 type ArticleSearchResponse = {
     entries: ArticleSearchEntry[];
 };
+
+export interface SearchArticlesParams {
+    pageIndex?: number;
+    pageSize?: number;
+    title?: string;
+    category?: string;
+    authorName?: string;
+    publishedAfter?: string;
+    sortBy?: string;
+}
 
 export type Draft = {
     id: string | undefined;
@@ -48,6 +57,41 @@ export async function getFeaturedArticles(): Promise<Article[]> {
         summary: entry.summary || "Sin resumen disponible",
         likes: 0,
     }));
+}
+
+export async function searchArticles(params: SearchArticlesParams): Promise<ArticleSearchResult> {
+    const searchParams = new URLSearchParams();
+
+    if (params.pageIndex !== undefined) {
+        searchParams.append("pageIndex", params.pageIndex.toString());
+    }
+    if (params.pageSize !== undefined) {
+        searchParams.append("pageSize", params.pageSize.toString());
+    }
+    if (params.title) {
+        searchParams.append("title", params.title);
+    }
+    if (params.category) {
+        searchParams.append("category", params.category);
+    }
+    if (params.authorName) {
+        searchParams.append("authorName", params.authorName);
+    }
+    if (params.publishedAfter) {
+        searchParams.append("publishedAfter", params.publishedAfter);
+    }
+    if (params.sortBy) {
+        searchParams.append("sortBy", params.sortBy);
+    }
+
+    let queryString = searchParams.toString();
+    queryString = queryString ? `?${queryString}` : "";
+    
+    const endpoint = `/articles/search${queryString}`;
+
+    return apiRequest<ArticleSearchResult>(endpoint, {
+        skipAuth: true
+    });
 }
 
 export async function getCategories(): Promise<Category[]> {

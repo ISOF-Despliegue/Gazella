@@ -1,97 +1,139 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BackButton } from '../components/BackButton';
-import { assets } from '../assets/assets';
+import { Header } from '../components/Header';
+import { getCategories, searchArticles } from '../services/articles';
+import { SafeImage } from '../components/SafeImage';
+import { type Category, type ArticleSearchEntry } from '../types/article';
 
-interface Article {
-    id: number;
-    title: string;
-    author: string;
-    category: string;
-    description: string;
-    publishedDate: string;
-    lastEditDate: string;
-    imageUrl?: string;
+interface OrderOption {
+    display: string;
+    key: string;
 }
 
-const MOCK_ARTICLES: Article[] = [
-    { id: 1, title: 'La importancia de separar la basura', author: 'Abel Hernández Yong', category: 'Biodiversidad', description: 'Como separa tu basura y formar un hábito', publishedDate: '14 de abril de 2026', lastEditDate: '18 de abril de 2026' },
-    { id: 2, title: 'La importancia de separar la basura', author: 'Abel Hernández Yong', category: 'Biodiversidad', description: 'Como separa tu basura y formar un hábito', publishedDate: '14 de abril de 2026', lastEditDate: '18 de abril de 2026' },
-    { id: 3, title: 'La importancia de separar la basura', author: 'Abel Hernández Yong', category: 'Biodiversidad', description: 'Como separa tu basura y formar un hábito', publishedDate: '14 de abril de 2026', lastEditDate: '18 de abril de 2026' },
-    { id: 4, title: 'La importancia de separar la basura', author: 'Abel Hernández Yong', category: 'Biodiversidad', description: 'Como separa tu basura y formar un hábito', publishedDate: '14 de abril de 2026', lastEditDate: '18 de abril de 2026' },
-    { id: 5, title: 'La importancia de separar la basura', author: 'Abel Hernández Yong', category: 'Biodiversidad', description: 'Como separa tu basura y formar un hábito', publishedDate: '14 de abril de 2026', lastEditDate: '18 de abril de 2026' },
+const ORDER_OPTIONS: OrderOption[] = [
+    { display: 'Más reciente', key: 'published_at' },
+    { display: 'Más relevante', key: 'views' },
+    { display: 'Más comentado', key: 'comments' },
+    { display: 'Más me gusta', key: 'likes' }
 ];
 
-const CATEGORIES = ['Biodiversidad', 'Áreas Protegidas', 'Acción Climática', 'Flora y Fauna'];
-const ORDER_OPTIONS = ['Más reciente (predeterminado)', 'Más relevante', 'Más comentado', 'Más me gusta'];
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const YEARS = ['2023', '2024', '2025', '2026'];
 
 export function ArticlesListPage() {
     const navigate = useNavigate();
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
-    const [authorSearch, setAuthorSearch] = useState('');
+    
+    const [titleInput, setTitleInput] = useState<string>('');
+    const [searchTitle, setSearchTitle] = useState<string>(''); // For API
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedCategoryName, setSelectedCategoryName] = useState<string>(''); 
+    const [selectedOrderKey, setSelectedOrderKey] = useState<string>('published_at');
+    const [authorInput, setAuthorInput] = useState<string>('');
+    const [authorSearch, setAuthorSearch] = useState<string>(''); // For API
     const [selectedMonth, setSelectedMonth] = useState('Sep');
     const [selectedYear, setSelectedYear] = useState('2025');
+    const [publishedAfter, setPublishedAfter] = useState<string>('');
+    
+    const [articles, setArticles] = useState<ArticleSearchEntry[]>([]);
+    const [pageSize, setPageSize] = useState<number>(10);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageCount, setPageCount] = useState<number>(1);
+    const [totalEntries, setTotalEntries] = useState<number>(0);
+    const [pageInputValue, setPageInputValue] = useState<string>("1");
 
-    const toggleCategory = (cat: string) => {
-        setSelectedCategories((prev) =>
-            prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-        );
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const mockData = await getCategories();
+            setCategories(mockData);
+        };
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        const monthIndex = MONTHS.indexOf(selectedMonth);
+        if (monthIndex !== -1 && selectedYear) {
+            // Parameters are (year, month_index, day, hours, minutes, seconds)
+            const date = new Date(Date.UTC(Number.parseInt(selectedYear), monthIndex, 1, 0, 0, 0));
+            setPublishedAfter(date.toISOString());
+        }
+    }, [selectedMonth, selectedYear]);
+
+    useEffect(() => {
+        setPageInputValue(currentPage.toString());
+
+        const fetchArticlesData = async () => {
+            try {
+                const result = await searchArticles({
+                    pageIndex: currentPage,
+                    pageSize: pageSize,
+                    title: searchTitle || undefined,
+                    category: selectedCategoryName || undefined,
+                    authorName: authorSearch || undefined,
+                    publishedAfter: publishedAfter || undefined,
+                    sortBy: selectedOrderKey || undefined
+                });
+
+                setArticles(result?.entries ?? []);
+                setTotalEntries(result?.totalEntries ?? 0);
+                setPageCount(result?.pageCount ?? 1);
+                
+                if (currentPage > (result?.pageCount ?? 1) && (result?.pageCount ?? 0) > 0) {
+                    setCurrentPage(result.pageCount);
+                }
+
+            } catch (error) {
+                console.error("Error al buscar artículos:", error);
+                setArticles([]);
+            }
+        };
+
+        fetchArticlesData();
+
+    }, [currentPage, pageSize, selectedCategoryName, authorSearch, publishedAfter, selectedOrderKey, searchTitle]);
+
+    const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        if (val === '' || /^\d+$/.test(val)) {
+            setPageInputValue(val);
+        }
     };
 
-    const toggleOrder = (opt: string) => {
-        setSelectedOrder((prev) =>
-            prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
-        );
+    const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            let newPage = Number.parseInt(pageInputValue, 10);
+            
+            if (Number.isNaN(newPage)) {
+                setPageInputValue(currentPage.toString());
+            } else {
+                if (newPage > pageCount) {
+                    newPage = pageCount;
+                }
+                if (newPage < 1) {
+                    newPage = 1;
+                }
+                
+                setCurrentPage(newPage);
+                setPageInputValue(newPage.toString()); // Visually adjust input to valid page if it was out of range
+            }
+        }
+    };
+
+    const handlePrevPage = () => {
+        setCurrentPage((prev) => Math.max(1, prev - 1));
+    };
+
+    const handleNextPage = () => {
+        setCurrentPage((prev) => Math.min(pageCount, prev + 1));
     };
 
     return (
-        <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', paddingBottom: '40px' }}>
 
-            {/* Navbar */}
-            <nav style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 40px',
-                backgroundColor: 'white',
-                borderBottom: '1px solid #e5e7eb',
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <BackButton fallbackPath="/dashboard" />
-                    <img src={assets.gazella} alt="Gazella" style={{ width: '70px', objectFit: 'contain' }} />
-                    <h1 style={{ fontSize: '28px', fontWeight: 'bold', lineHeight: '1.2' }}>
-                        Conservación de<br />la biodiversidad
-                    </h1>
-                </div>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '9999px',
-                    padding: '8px 16px',
-                    width: '320px',
-                    backgroundColor: 'white',
-                }}>
-                    <span style={{ marginRight: '8px', color: '#9ca3af' }}>🔍</span>
-                    <input
-                        type="text"
-                        placeholder="Busca artículos o proyectos"
-                        style={{ outline: 'none', fontSize: '14px', width: '100%', border: 'none', background: 'transparent' }}
-                    />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '20px', color: '#6b7280' }}>👤</span>
-                    <span style={{ fontWeight: '500', fontSize: '15px' }}>Carlos</span>
-                </div>
-            </nav>
+            <Header/>
 
-            {/* Contenido */}
             <div style={{ display: 'flex', padding: '24px 40px', gap: '24px' }}>
 
-                {/* Panel de filtros */}
+                {/* Filter panel */}
                 <aside style={{
                     width: '200px',
                     flexShrink: 0,
@@ -106,129 +148,291 @@ export function ArticlesListPage() {
                 }}>
                     <h3 style={{ fontWeight: 'bold', fontSize: '16px' }}>Filtros:</h3>
 
-                    {/* Categoría */}
+                    {/* Category */}
                     <div>
                         <h4 style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '8px' }}>Categoría</h4>
-                        {CATEGORIES.map((cat) => (
-                            <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '6px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedCategories.includes(cat)}
-                                    onChange={() => toggleCategory(cat)}
-                                />
-                                {cat}
-                            </label>
-                        ))}
-                    </div>
-
-                    {/* Autor */}
-                    <div>
-                        <h4 style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '8px' }}>Autor</h4>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '6px',
-                            padding: '6px 10px',
-                            gap: '6px',
-                        }}>
-                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>🔍</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar a tu autor favorito"
-                                value={authorSearch}
-                                onChange={(e) => setAuthorSearch(e.target.value)}
-                                style={{ border: 'none', outline: 'none', fontSize: '12px', width: '100%' }}
-                            />
+                        <div style={{ maxHeight: '130px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                            {categories.map((cat) => (
+                                <label key={cat.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                                    <input
+                                        type="radio"
+                                        name="category"
+                                        value={cat.name}
+                                        checked={selectedCategoryName === cat.name}
+                                        onChange={(e) => {
+                                            setSelectedCategoryName(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        style={{ marginTop: '2px' }}
+                                    />
+                                    <span style={{ lineHeight: '1.2' }}>{cat.name}</span>
+                                </label>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Fecha */}
+                    {/* Author */}
+                    <div>
+                        <h4 style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '8px' }}>Autor</h4>
+                        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '6px', padding: '6px 10px', gap: '6px' }}>
+                            <input
+                                type="text"
+                                placeholder="Buscar por autor"
+                                maxLength={128}
+                                value={authorInput}
+                                onChange={(e) => {
+                                    setAuthorInput(e.target.value.trimStart());
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        if (authorInput.length > 0 && authorInput.trim().length === 0) return;
+                                        
+                                        setAuthorSearch(authorInput.trim());
+                                        setAuthorInput(authorInput.trim());
+                                        setCurrentPage(1);
+                                    }
+                                }}
+                                style={{ border: 'none', outline: 'none', fontSize: '12px', width: '100%' }}
+                            />
+                            <button 
+                                type="button"
+                                aria-label="Buscar por autor"
+                                onClick={() => {
+                                    if (authorInput.length > 0 && authorInput.trim().length === 0) {
+                                        return;
+                                    }
+                                    setAuthorSearch(authorInput.trim());
+                                    setAuthorInput(authorInput.trim());
+                                    setCurrentPage(1);
+                                }}
+                                style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    padding: 0, 
+                                    fontSize: '12px', 
+                                    color: '#9ca3af', 
+                                    cursor: 'pointer' 
+                                }}
+                            >
+                                🔍
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Date */}
                     <div>
                         <h4 style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '8px' }}>Fecha</h4>
                         <div style={{ display: 'flex', gap: '6px' }}>
-                            <select
-                                value={selectedMonth}
-                                onChange={(e) => setSelectedMonth(e.target.value)}
-                                style={{ border: '1px solid #d1d5db', borderRadius: '4px', padding: '4px', fontSize: '12px', flex: 1 }}
-                            >
+                            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: '4px', padding: '4px', fontSize: '12px', flex: 1 }}>
                                 {MONTHS.map((m) => <option key={m}>{m}</option>)}
                             </select>
-                            <select
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(e.target.value)}
-                                style={{ border: '1px solid #d1d5db', borderRadius: '4px', padding: '4px', fontSize: '12px', flex: 1 }}
-                            >
+                            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: '4px', padding: '4px', fontSize: '12px', flex: 1 }}>
                                 {YEARS.map((y) => <option key={y}>{y}</option>)}
                             </select>
                         </div>
+                        <div style={{ fontSize: '10px', marginTop: '4px', color: 'gray' }}>{publishedAfter}</div>
                     </div>
 
-                    {/* Ordenar por */}
+                    {/* Order by */}
                     <div>
                         <h4 style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '8px' }}>Ordenar por:</h4>
-                        {ORDER_OPTIONS.map((opt) => (
-                            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '6px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedOrder.includes(opt)}
-                                    onChange={() => toggleOrder(opt)}
-                                />
-                                {opt}
-                            </label>
-                        ))}
+                        <div style={{ maxHeight: '130px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                            {ORDER_OPTIONS.map((opt) => (
+                                <label key={opt.key} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                                    <input
+                                        type="radio"
+                                        name="order"
+                                        value={opt.key}
+                                        checked={selectedOrderKey === opt.key}
+                                        onChange={(e) => setSelectedOrderKey(e.target.value)}
+                                        style={{ marginTop: '2px' }}
+                                    />
+                                    <span style={{ lineHeight: '1.2' }}>{opt.display}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </aside>
 
-                {/* Lista de artículos */}
-                <main style={{ flex: 1 }}>
-                    <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px' }}>Lista de artículos publicados</h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {MOCK_ARTICLES.map((article) => (
-                            <div
-                                key={article.id}
-                                onClick={() => navigate(`/articulo/${article.id}`)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '16px',
-                                    backgroundColor: 'white',
-                                    border: '1px solid #e5e7eb',
-                                    borderRadius: '8px',
-                                    padding: '12px 16px',
-                                    cursor: 'pointer',
+                {/* Article entries */}
+                <main style={{ 
+                    flex: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    height: 'calc(90vh - 100px)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>
+                            Lista de artículos publicados
+                        </h2>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '9999px', padding: '8px 16px', width: '320px', backgroundColor: 'white' }}>
+                            <input
+                                type="text"
+                                placeholder="Buscar artículos por titulo"
+                                maxLength={128}
+                                value={titleInput}
+                                onChange={(e) => {
+                                    setTitleInput(e.target.value.trimStart());
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        setSearchTitle(titleInput.trim());
+                                        setTitleInput(titleInput.trim());
+                                        setCurrentPage(1);
+                                    }
+                                }}
+                                style={{ outline: 'none', fontSize: '14px', width: '100%', border: 'none', background: 'transparent' }}
+                            />
+                            <button 
+                                type="button"
+                                aria-label="Buscar artículos por título"
+                                onClick={() => {
+                                    setSearchTitle(titleInput.trim());
+                                    setTitleInput(titleInput.trim());
+                                    setCurrentPage(1);
+                                }}
+                                style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    padding: 0, 
+                                    marginRight: '8px', 
+                                    color: '#9ca3af', 
+                                    cursor: 'pointer' 
                                 }}
                             >
-                                {/* Imagen */}
-                                <div style={{
-                                    width: '72px',
-                                    height: '72px',
-                                    backgroundColor: '#e5e7eb',
-                                    borderRadius: '6px',
-                                    flexShrink: 0,
-                                }} />
+                                🔍
+                            </button>
+                        </div>
+                    </div>
 
-                                {/* Info izquierda */}
+                    {/* Article entries mapping */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflowY: 'auto', paddingRight: '8px', marginBottom: '16px' }}>
+                        {(articles ?? []).map((article) => (
+                            <div
+                                key={article.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => navigate(`/articulo/${article.id}`)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        navigate(`/articulo/${article.id}`);
+                                    }
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 16px', cursor: 'pointer' }}
+                            >
+                                {/* Picture */}
+                                <div style={{ width: '72px', height: '72px', backgroundColor: '#e5e7eb', borderRadius: '6px', flexShrink: 0, overflow: 'hidden' }}>
+                                    <SafeImage
+                                        src={article.coverUri}
+                                        alt={article.title}
+                                        variant="cover"
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
+                                </div>
+
+                                {/* Data */}
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{article.title}</h3>
                                     <p style={{ fontSize: '13px', color: '#374151', marginBottom: '2px' }}>
-                                        <strong>Autor:</strong> {article.author}
+                                        <strong>Autor:</strong> {article.authorName}
                                     </p>
                                     <p style={{ fontSize: '13px', color: '#374151', marginBottom: '2px' }}>
-                                        <strong>Categoría:</strong> {article.category}
+                                        <strong>Categoría:</strong> {article.categoryName}
                                     </p>
                                     <p style={{ fontSize: '13px', color: '#374151' }}>
-                                        <strong>Descripción:</strong> {article.description}
+                                        <strong>Descripción:</strong> {article.summary}
                                     </p>
                                 </div>
 
-                                {/* Fechas */}
+                                {/* Dates */}
                                 <div style={{ textAlign: 'right', fontSize: '13px', color: '#374151', flexShrink: 0 }}>
-                                    <p><strong>Publicado:</strong> {article.publishedDate}</p>
-                                    <p><strong>Última edición:</strong> {article.lastEditDate}</p>
+                                    <p><strong>Publicado:</strong> {article.publishedAt}</p>
+                                    <p><strong>Última edición:</strong> {article.lastUpdatedAt}</p>
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Pagination */}
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        paddingTop: '16px',
+                        borderTop: '1px solid #e5e7eb',
+                        marginTop: 'auto'
+                    }}>
+                        {/* Page size selector */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label htmlFor="pageSize" style={{ fontSize: '14px', color: '#374151' }}>Mostrar resultados:</label>
+                            <select 
+                                id="pageSize"
+                                value={pageSize} 
+                                onChange={(e) => {
+                                    setPageSize(Number(e.target.value));
+                                    setCurrentPage(1); // Reset to first page when page size changes
+                                }} 
+                                style={{ border: '1px solid #d1d5db', borderRadius: '4px', padding: '4px 8px', fontSize: '13px', cursor: 'pointer' }}
+                            >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                            </select>
+                        </div>
+
+                        {/* Pagination info */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: '#374151' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Página
+                                {/*no space*/}
+                                <input
+                                    type="text"
+                                    value={pageInputValue}
+                                    onChange={handlePageInputChange}
+                                    onKeyDown={handlePageInputKeyDown}
+                                    style={{ 
+                                        width: '40px', 
+                                        textAlign: 'center', 
+                                        padding: '4px', 
+                                        border: '1px solid #d1d5db', 
+                                        borderRadius: '4px',
+                                        outline: 'none',
+                                        fontSize: '13px'
+                                    }}
+                                />
+                            </div>
+                            <span>de {pageCount}</span>
+                            <span style={{ color: '#6b7280', borderLeft: '1px solid #d1d5db', paddingLeft: '12px' }}>
+                                Total: {totalEntries}
+                            </span>
+                        </div>
+
+                        {/* Pagination controls ◄ ► */}
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            {currentPage > 1 ? (
+                                <button 
+                                    onClick={handlePrevPage}
+                                    style={{ padding: '6px 12px', cursor: 'pointer', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    ◄
+                                </button>
+                            ) : (
+                                <div style={{ width: '38px' }} /> /* Alignment placeholder */
+                            )}
+
+                            {currentPage < pageCount ? (
+                                <button 
+                                    onClick={handleNextPage}
+                                    style={{ padding: '6px 12px', cursor: 'pointer', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    ►
+                                </button>
+                            ) : (
+                                <div style={{ width: '38px' }} />
+                            )}
+                        </div>
                     </div>
                 </main>
             </div>

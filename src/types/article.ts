@@ -23,3 +23,23 @@ export interface Article {
     imageUrl?: string;
     likes: number;
 }
+
+export interface ArticleSearchEntry {
+    id: number;
+    title: string;
+    coverUri: string;
+    authorId: string;
+    authorName: string;
+    categoryName: string;
+    summary: string;
+    publishedAt: string;
+    lastUpdatedAt: string;
+}
+
+export interface ArticleSearchResult {
+    entries: ArticleSearchEntry[];
+    totalEntries: number;
+    currentPage: number;
+    pageCount: number;
+    pageSize: number;
+}
