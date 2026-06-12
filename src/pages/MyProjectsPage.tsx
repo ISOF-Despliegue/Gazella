@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyProjects, cancelProject, getProjectVolunteers, type VolunteerEntry } from "../services/projects";
 import { type Project } from "../types/project";
-import { BackButton } from "../components/BackButton";
-import { assets } from "../assets/assets";
+import { Header } from "../components/Header";
 import { getCurrentSession } from "../services/auth";
 
 type TabFilter = "activos" | "finalizados" | "borradores";
@@ -25,16 +24,13 @@ export function MyProjectsPage() {
     const [activeTab, setActiveTab] = useState<TabFilter>("activos");
     const [actionMessage, setActionMessage] = useState<{ text: string; type: "ok" | "err" } | null>(null);
 
-    // Volunteers panel
     const [volunteersProjectId, setVolunteersProjectId] = useState<string | null>(null);
     const [volunteersProjectTitle, setVolunteersProjectTitle] = useState<string>("");
     const [volunteers, setVolunteers] = useState<VolunteerEntry[]>([]);
     const [volunteersTotal, setVolunteersTotal] = useState(0);
-    const [volunteersLoading, setVolunteersLoading] = useState(false);
-    const [volunteerSearch, setVolunteerSearch] = useState("");
     const [volunteersMax, setVolunteersMax] = useState(0);
+    const [volunteersLoading, setVolunteersLoading] = useState(false);
 
-    // Cancel confirm
     const [confirmCancelProject, setConfirmCancelProject] = useState<Project | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
 
@@ -83,7 +79,6 @@ export function MyProjectsPage() {
         setVolunteersProjectTitle(project.title);
         setVolunteersMax(project.volunteersMax);
         setVolunteersLoading(true);
-        setVolunteerSearch("");
         try {
             const result = await getProjectVolunteers(project.id, { pageSize: 50 });
             setVolunteers(result.volunteers ?? []);
@@ -96,26 +91,11 @@ export function MyProjectsPage() {
         }
     };
 
-    const filteredVolunteers = volunteers.filter((v) =>
-        !volunteerSearch ||
-        v.full_name?.toLowerCase().includes(volunteerSearch.toLowerCase()) ||
-        v.email?.toLowerCase().includes(volunteerSearch.toLowerCase())
-    );
-
     const confirmedCount = volunteers.filter((v) => v.enrollment_status === "Confirmed").length;
 
     return (
         <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-            {/* Navbar */}
-            <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 40px", backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <BackButton fallbackPath="/dashboard" />
-                    <img src={assets.gazella} alt="Gazella" style={{ width: "70px", objectFit: "contain" }} />
-                    <h1 style={{ fontSize: "22px", fontWeight: "bold", lineHeight: "1.2" }}>
-                        Conservación de<br />la biodiversidad
-                    </h1>
-                </div>
-            </nav>
+            <Header />
 
             <div style={{ maxWidth: "960px", margin: "32px auto", padding: "0 24px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
@@ -128,22 +108,17 @@ export function MyProjectsPage() {
                     </button>
                 </div>
 
-                {/* Tabs */}
                 <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", marginBottom: "24px" }}>
                     {(["activos", "finalizados", "borradores"] as TabFilter[]).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             style={{
-                                padding: "10px 20px",
-                                border: "none",
+                                padding: "10px 20px", border: "none",
                                 borderBottom: activeTab === tab ? "2px solid #16a34a" : "2px solid transparent",
-                                backgroundColor: "transparent",
-                                cursor: "pointer",
-                                fontSize: "14px",
+                                backgroundColor: "transparent", cursor: "pointer", fontSize: "14px",
                                 fontWeight: activeTab === tab ? "600" : "400",
-                                color: activeTab === tab ? "#16a34a" : "#6b7280",
-                                borderRadius: 0,
+                                color: activeTab === tab ? "#16a34a" : "#6b7280", borderRadius: 0,
                             }}
                         >
                             {tabLabels[tab]}
@@ -172,7 +147,6 @@ export function MyProjectsPage() {
                         const isActive = project.status === "Active" || project.status === "active";
                         return (
                             <div key={project.id} style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "20px", display: "flex", gap: "16px", alignItems: "flex-start" }}>
-                                {/* Thumbnail */}
                                 <div style={{ width: "80px", height: "64px", borderRadius: "8px", backgroundColor: "#d1fae5", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     {project.coverUri ? (
                                         <img src={project.coverUri} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -181,7 +155,6 @@ export function MyProjectsPage() {
                                     )}
                                 </div>
 
-                                {/* Info */}
                                 <div style={{ flex: 1 }}>
                                     <p style={{ fontWeight: "700", fontSize: "16px", marginBottom: "4px" }}>{project.title}</p>
                                     <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "8px" }}>
@@ -199,25 +172,15 @@ export function MyProjectsPage() {
                                     </div>
                                 </div>
 
-                                {/* Actions */}
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", flexShrink: 0 }}>
-                                    <button
-                                        onClick={() => navigate(`/mis-proyectos/editar/${project.id}`)}
-                                        style={{ padding: "8px 16px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px" }}
-                                    >
+                                    <button onClick={() => navigate(`/mis-proyectos/editar/${project.id}`)} style={{ padding: "8px 16px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px" }}>
                                         Editar
                                     </button>
-                                    <button
-                                        onClick={() => openVolunteers(project)}
-                                        style={{ padding: "8px 16px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px" }}
-                                    >
+                                    <button onClick={() => openVolunteers(project)} style={{ padding: "8px 16px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px" }}>
                                         Ver voluntarios
                                     </button>
                                     {isActive && (
-                                        <button
-                                            onClick={() => setConfirmCancelProject(project)}
-                                            style={{ padding: "8px 16px", border: "1px solid #fecaca", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px", color: "#dc2626" }}
-                                        >
+                                        <button onClick={() => setConfirmCancelProject(project)} style={{ padding: "8px 16px", border: "1px solid #fecaca", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px", color: "#dc2626" }}>
                                             Cancelar proyecto
                                         </button>
                                     )}
@@ -228,7 +191,6 @@ export function MyProjectsPage() {
                 </div>
             </div>
 
-            {/* Volunteers panel */}
             {volunteersProjectId && (
                 <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                     <div style={{ backgroundColor: "white", borderRadius: "12px", width: "680px", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", overflow: "hidden" }}>
@@ -248,7 +210,7 @@ export function MyProjectsPage() {
                         <div style={{ overflowY: "auto", flex: 1 }}>
                             {volunteersLoading ? (
                                 <div style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>Cargando voluntarios...</div>
-                            ) : filteredVolunteers.length === 0 ? (
+                            ) : volunteers.length === 0 ? (
                                 <div style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No hay voluntarios registrados.</div>
                             ) : (
                                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -260,7 +222,7 @@ export function MyProjectsPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredVolunteers.map((v) => (
+                                        {volunteers.map((v) => (
                                             <tr key={v.volunteer_id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                                                 <td style={{ padding: "12px 16px", fontSize: "13px", color: "#6b7280" }}>{v.email}</td>
                                                 <td style={{ padding: "12px 16px", fontSize: "13px", color: "#6b7280" }}>{formatDate(v.enrolled_at)}</td>
@@ -284,7 +246,6 @@ export function MyProjectsPage() {
                 </div>
             )}
 
-            {/* Confirm cancel project dialog */}
             {confirmCancelProject && (
                 <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                     <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
@@ -299,11 +260,7 @@ export function MyProjectsPage() {
                             <button onClick={() => setConfirmCancelProject(null)} style={{ flex: 1, padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "14px" }}>
                                 No, conservar proyecto
                             </button>
-                            <button
-                                onClick={() => handleCancelProject(confirmCancelProject)}
-                                disabled={isCancelling}
-                                style={{ flex: 1, padding: "10px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
-                            >
+                            <button onClick={() => handleCancelProject(confirmCancelProject)} disabled={isCancelling} style={{ flex: 1, padding: "10px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>
                                 {isCancelling ? "Cancelando..." : "Sí, cancelar proyecto"}
                             </button>
                         </div>

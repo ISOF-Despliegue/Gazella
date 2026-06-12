@@ -3,9 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getProjects } from "../services/projects";
 import { type Project } from "../types/project";
 import { ProjectCard } from "../components/ProjectCard";
-import { BackButton } from "../components/BackButton";
-import { assets } from "../assets/assets";
-import { getCurrentSession } from "../services/auth";
+import { Header } from "../components/Header";
 
 const CATEGORIES = [
     { label: "Todos", value: "" },
@@ -22,7 +20,6 @@ const ORDER_OPTIONS = [
 
 export function ProjectsListPage() {
     const navigate = useNavigate();
-    const session = getCurrentSession();
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -67,67 +64,26 @@ export function ProjectsListPage() {
 
     return (
         <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-            {/* Navbar */}
-            <nav style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "16px 40px",
-                backgroundColor: "white",
-                borderBottom: "1px solid #e5e7eb",
-                gap: "24px",
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <BackButton fallbackPath="/home" />
-                    <img src={assets.gazella} alt="Gazella" style={{ width: "70px", objectFit: "contain" }} />
-                    <h1 style={{ fontSize: "22px", fontWeight: "bold", lineHeight: "1.2" }}>
-                        Conservación de<br />la biodiversidad
-                    </h1>
-                </div>
-
-                <form onSubmit={handleSearch} style={{
-                    display: "flex",
-                    alignItems: "center",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "9999px",
-                    padding: "8px 16px",
-                    width: "320px",
-                    backgroundColor: "white",
-                }}>
-                    <span style={{ marginRight: "8px", color: "#9ca3af" }}>🔍</span>
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Busca proyectos por nombre"
-                        style={{ outline: "none", fontSize: "14px", width: "100%", border: "none", background: "transparent" }}
-                    />
-                </form>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    {session ? (
-                        <button
-                            onClick={() => navigate("/dashboard")}
-                            style={{ padding: "8px 16px", backgroundColor: "#16a34a", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px" }}
-                        >
-                            Mi panel
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => navigate("/login")}
-                            style={{ padding: "8px 16px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "14px" }}
-                        >
-                            Iniciar sesión
-                        </button>
-                    )}
-                </div>
-            </nav>
+            <Header />
 
             <div style={{ display: "flex", padding: "32px 40px", gap: "32px", maxWidth: "1200px", margin: "0 auto" }}>
                 {/* Sidebar de filtros */}
                 <aside style={{ width: "220px", flexShrink: 0 }}>
                     <div style={{ backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "20px" }}>
                         <h3 style={{ fontSize: "14px", fontWeight: "600", marginBottom: "16px", color: "#374151" }}>Filtros</h3>
+
+                        <form onSubmit={handleSearch} style={{ marginBottom: "16px" }}>
+                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #d1d5db", borderRadius: "6px", padding: "6px 10px", backgroundColor: "white" }}>
+                                <span style={{ marginRight: "6px", color: "#9ca3af", fontSize: "13px" }}>🔍</span>
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Buscar proyecto..."
+                                    style={{ outline: "none", fontSize: "13px", width: "100%", border: "none", background: "transparent" }}
+                                />
+                            </div>
+                        </form>
 
                         <div style={{ marginBottom: "20px" }}>
                             <p style={{ fontSize: "12px", fontWeight: "600", color: "#6b7280", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Categoría</p>
@@ -210,7 +166,6 @@ export function ProjectsListPage() {
                         ))}
                     </div>
 
-                    {/* Paginación */}
                     {pageCount > 1 && (
                         <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "32px" }}>
                             <button

@@ -59,7 +59,7 @@ export async function getProjects(params: GetProjectsParams = {}): Promise<Proje
 }
 
 export async function getUpcomingProjects(): Promise<Project[]> {
-    const result = await getProjects({ pageSize: 3, orderBy: "soonest" });
+    const result = await getProjects({ pageIndex: 0, pageSize: 3, orderBy: "soonest" });
     return result.mappedProjects;
 }
 
