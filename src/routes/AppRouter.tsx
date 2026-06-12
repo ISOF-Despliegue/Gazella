@@ -17,6 +17,9 @@ import { ProjectDetailPage } from "../pages/ProjectDetailPage";
 import { MyEnrollmentsPage } from "../pages/MyEnrollmentsPage";
 import { MyProjectsPage } from "../pages/MyProjectsPage";
 import { CreateProjectPage } from "../pages/CreateProjectPage";
+import { RoleGuard } from "../components/RoleGuard";
+import { AuthorStatsPage } from "../pages/AuthorStatsPage";
+import { ManagePublishedArticlesPage } from "../pages/ManagePublishedArticlesPage";
 
 export function AppRouter() {
     return (
@@ -36,6 +39,10 @@ export function AppRouter() {
                 <Route path="/articulo/:articleId" element={<ReadArticlePage />} />
                 <Route path="/editor/articulos" element={<PendingArticlesPage />} />
                 <Route path="/editor/articulos/:articleId/revision" element={<ReviewArticlePage />} />
+                <Route path="/editor/articulos" element={<RoleGuard allowedRoles={["editor", "moderator"]}><PendingArticlesPage /></RoleGuard>} />
+                <Route path="/editor/articulos/:articleId/revision" element={<RoleGuard allowedRoles={["editor", "moderator"]}><ReviewArticlePage /></RoleGuard>} />
+                <Route path="/editor/articulos/publicados" element={<RoleGuard allowedRoles={["editor", "moderator"]}><ManagePublishedArticlesPage /></RoleGuard>} />
+                <Route path="/mis-articulos/estadisticas" element={<RoleGuard><AuthorStatsPage /></RoleGuard>} />
                 <Route path="/proyectos" element={<ProjectsListPage />} />
                 <Route path="/proyectos/:projectId" element={<ProjectDetailPage />} />
                 <Route path="/mis-inscripciones" element={<MyEnrollmentsPage />} />

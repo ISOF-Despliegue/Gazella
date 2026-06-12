@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createProject, updateProject, getProjectById } from "../services/projects";
 import { type CreateProjectInput } from "../types/project";
-import { BackButton } from "../components/BackButton";
-import { assets } from "../assets/assets";
+import { Header } from "../components/Header";
 import { getCurrentSession } from "../services/auth";
 
 const CATEGORIES = [
@@ -18,21 +17,12 @@ function resolveCategoryId(categoryNameOrId: string): string {
     if (!categoryNameOrId) return "";
     const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (isValidUuid.test(categoryNameOrId)) return categoryNameOrId;
-    const match = CATEGORIES.find(
-        (c) => c.label.toLowerCase() === categoryNameOrId.toLowerCase()
-    );
+    const match = CATEGORIES.find((c) => c.label.toLowerCase() === categoryNameOrId.toLowerCase());
     return match?.value ?? "";
 }
 
 const EMPTY_FORM: Omit<CreateProjectInput, "isDraft"> = {
-    title: "",
-    description: "",
-    location: "",
-    categoryId: "",
-    coverUri: "",
-    startDate: "",
-    endDate: "",
-    maxVolunteers: 20,
+    title: "", description: "", location: "", categoryId: "", coverUri: "", startDate: "", endDate: "", maxVolunteers: 20,
 };
 
 export function CreateProjectPage() {
@@ -82,9 +72,7 @@ export function CreateProjectPage() {
         if (!form.location.trim()) errs.location = "El lugar es obligatorio.";
         if (!form.startDate) errs.startDate = "La fecha de inicio es obligatoria.";
         if (!form.endDate) errs.endDate = "La fecha de fin es obligatoria.";
-        if (form.startDate && form.endDate && form.endDate < form.startDate) {
-            errs.endDate = "La fecha de fin debe ser posterior a la fecha de inicio.";
-        }
+        if (form.startDate && form.endDate && form.endDate < form.startDate) errs.endDate = "La fecha de fin debe ser posterior a la fecha de inicio.";
         if (!form.maxVolunteers || form.maxVolunteers < 1) errs.maxVolunteers = "Debe ser un número positivo.";
         setErrors(errs);
         return Object.keys(errs).length === 0;
@@ -93,30 +81,24 @@ export function CreateProjectPage() {
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         setIsUploadingImage(true);
         setUploadError(null);
-
         const formData = new FormData();
         formData.append("file", file);
-
         try {
             const token = localStorage.getItem("gazella_access_token");
-            const response = await fetch("/media/upload", {
+            const response = await fetch("/media", {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token ?? ""}` },
                 body: formData,
             });
-
             if (!response.ok) throw new Error("Error al subir la imagen");
-
             const data = await response.json() as { url: string };
             field("coverUri", data.url);
         } catch {
             setUploadError("No fue posible subir la imagen. Intenta de nuevo.");
         } finally {
             setIsUploadingImage(false);
-            // Limpia el input para permitir subir el mismo archivo de nuevo
             e.target.value = "";
         }
     };
@@ -146,9 +128,7 @@ export function CreateProjectPage() {
             } else {
                 await createProject(input as CreateProjectInput);
                 setSuccessMessage(isDraft ? "Borrador guardado correctamente." : "Proyecto publicado exitosamente.");
-                if (!isDraft) {
-                    setTimeout(() => navigate("/mis-proyectos"), 1500);
-                }
+                if (!isDraft) setTimeout(() => navigate("/mis-proyectos"), 1500);
             }
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "Ocurrió un error al guardar el proyecto.";
@@ -164,13 +144,9 @@ export function CreateProjectPage() {
     };
 
     const inputStyle = (hasError?: boolean): React.CSSProperties => ({
-        width: "100%",
-        padding: "10px 12px",
+        width: "100%", padding: "10px 12px",
         border: `1px solid ${hasError ? "#fca5a5" : "#d1d5db"}`,
-        borderRadius: "6px",
-        fontSize: "14px",
-        outline: "none",
-        boxSizing: "border-box",
+        borderRadius: "6px", fontSize: "14px", outline: "none", boxSizing: "border-box",
         backgroundColor: hasError ? "#fff5f5" : "white",
     });
 
@@ -180,19 +156,9 @@ export function CreateProjectPage() {
 
     return (
         <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-            {/* Navbar */}
-            <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 40px", backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <BackButton fallbackPath="/mis-proyectos" />
-                    <img src={assets.gazella} alt="Gazella" style={{ width: "70px", objectFit: "contain" }} />
-                    <h1 style={{ fontSize: "22px", fontWeight: "bold", lineHeight: "1.2" }}>
-                        Conservación de<br />la biodiversidad
-                    </h1>
-                </div>
-            </nav>
+            <Header />
 
             <div style={{ maxWidth: "900px", margin: "32px auto", padding: "0 24px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
-                {/* Form */}
                 <div style={{ flex: 1, backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "28px" }}>
                     <h2 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "24px" }}>
                         {isEditing ? "Editar proyecto de voluntariado" : "Crear proyecto de voluntariado"}
@@ -209,190 +175,98 @@ export function CreateProjectPage() {
                         </div>
                     )}
 
-                    {/* Title */}
                     <div style={{ marginBottom: "16px" }}>
-                        <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>
-                            Título del proyecto *
-                        </label>
-                        <input
-                            type="text"
-                            value={form.title}
-                            onChange={(e) => field("title", e.target.value)}
-                            placeholder="Escribe un título llamativo..."
-                            style={inputStyle(!!errors.title)}
-                        />
+                        <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Título del proyecto *</label>
+                        <input type="text" value={form.title} onChange={(e) => field("title", e.target.value)} placeholder="Escribe un título llamativo..." style={inputStyle(!!errors.title)} />
                         {errors.title && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{errors.title}</p>}
                     </div>
 
-                    {/* Description */}
                     <div style={{ marginBottom: "16px" }}>
-                        <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>
-                            Descripción *
-                        </label>
-                        <textarea
-                            value={form.description}
-                            onChange={(e) => field("description", e.target.value)}
-                            placeholder="Describe el objetivo, actividades y lo que necesitan saber los voluntarios..."
-                            rows={4}
-                            style={{ ...inputStyle(!!errors.description), resize: "vertical", fontFamily: "inherit" }}
-                        />
+                        <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Descripción *</label>
+                        <textarea value={form.description} onChange={(e) => field("description", e.target.value)} placeholder="Describe el objetivo, actividades y lo que necesitan saber los voluntarios..." rows={4} style={{ ...inputStyle(!!errors.description), resize: "vertical", fontFamily: "inherit" }} />
                         {errors.description && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{errors.description}</p>}
                     </div>
 
-                    {/* Dates */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
                         <div>
                             <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Fecha de inicio *</label>
-                            <input
-                                type="date"
-                                value={form.startDate}
-                                onChange={(e) => field("startDate", e.target.value)}
-                                style={inputStyle(!!errors.startDate)}
-                            />
+                            <input type="date" value={form.startDate} onChange={(e) => field("startDate", e.target.value)} style={inputStyle(!!errors.startDate)} />
                             {errors.startDate && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{errors.startDate}</p>}
                         </div>
                         <div>
                             <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Fecha de fin *</label>
-                            <input
-                                type="date"
-                                value={form.endDate}
-                                onChange={(e) => field("endDate", e.target.value)}
-                                style={inputStyle(!!errors.endDate)}
-                            />
+                            <input type="date" value={form.endDate} onChange={(e) => field("endDate", e.target.value)} style={inputStyle(!!errors.endDate)} />
                             {errors.endDate && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{errors.endDate}</p>}
                         </div>
                     </div>
 
-                    {/* Location + Max volunteers */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
                         <div>
                             <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Lugar *</label>
-                            <input
-                                type="text"
-                                value={form.location}
-                                onChange={(e) => field("location", e.target.value)}
-                                placeholder="Dirección o punto de reunión"
-                                style={inputStyle(!!errors.location)}
-                            />
+                            <input type="text" value={form.location} onChange={(e) => field("location", e.target.value)} placeholder="Dirección o punto de reunión" style={inputStyle(!!errors.location)} />
                             {errors.location && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{errors.location}</p>}
                         </div>
                         <div>
                             <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Máximo de voluntarios *</label>
-                            <input
-                                type="number"
-                                value={form.maxVolunteers}
-                                onChange={(e) => field("maxVolunteers", parseInt(e.target.value, 10) || 0)}
-                                min={1}
-                                style={inputStyle(!!errors.maxVolunteers)}
-                            />
+                            <input type="number" value={form.maxVolunteers} onChange={(e) => field("maxVolunteers", parseInt(e.target.value, 10) || 0)} min={1} style={inputStyle(!!errors.maxVolunteers)} />
                             {errors.maxVolunteers && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{errors.maxVolunteers}</p>}
                         </div>
                     </div>
 
-                    {/* Category */}
                     <div style={{ marginBottom: "16px" }}>
                         <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Categoría</label>
-                        <select
-                            value={form.categoryId}
-                            onChange={(e) => field("categoryId", e.target.value)}
-                            style={{ ...inputStyle(), cursor: "pointer" }}
-                        >
+                        <select value={form.categoryId} onChange={(e) => field("categoryId", e.target.value)} style={{ ...inputStyle(), cursor: "pointer" }}>
                             <option value="">Seleccionar categoría</option>
-                            {CATEGORIES.map((c) => (
-                                <option key={c.value} value={c.value}>{c.label}</option>
-                            ))}
+                            {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                         </select>
                     </div>
 
-                    {/* Cover image upload */}
                     <div style={{ marginBottom: "8px" }}>
-                        <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>
-                            Imagen de portada
-                        </label>
-
-                        <input
-                            type="file"
-                            accept="image/*"
-                            id="cover-upload"
-                            style={{ display: "none" }}
-                            onChange={handleImageUpload}
-                        />
+                        <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px", color: "#374151" }}>Imagen de portada</label>
+                        <input type="file" accept="image/*" id="cover-upload" style={{ display: "none" }} onChange={handleImageUpload} />
 
                         {form.coverUri ? (
                             <div>
                                 <div style={{ width: "100%", height: "160px", borderRadius: "8px", overflow: "hidden", border: "1px solid #e5e7eb" }}>
-                                    <img
-                                        src={form.coverUri}
-                                        alt="Portada"
-                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                        onError={(e) => (e.currentTarget.style.display = "none")}
-                                    />
+                                    <img src={form.coverUri} alt="Portada" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => (e.currentTarget.style.display = "none")} />
                                 </div>
-                                <button
-                                    onClick={() => document.getElementById("cover-upload")?.click()}
-                                    disabled={isUploadingImage}
-                                    style={{ marginTop: "8px", width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: isUploadingImage ? "wait" : "pointer", fontSize: "13px", color: "#374151" }}
-                                >
+                                <button onClick={() => document.getElementById("cover-upload")?.click()} disabled={isUploadingImage} style={{ marginTop: "8px", width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: isUploadingImage ? "wait" : "pointer", fontSize: "13px", color: "#374151" }}>
                                     {isUploadingImage ? "Subiendo..." : "Cambiar imagen"}
                                 </button>
                             </div>
                         ) : (
                             <div
                                 onClick={() => !isUploadingImage && document.getElementById("cover-upload")?.click()}
-                                style={{ width: "100%", height: "160px", borderRadius: "8px", border: "2px dashed #d1d5db", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "14px", cursor: isUploadingImage ? "wait" : "pointer", gap: "8px", transition: "border-color 0.2s" }}
+                                style={{ width: "100%", height: "160px", borderRadius: "8px", border: "2px dashed #d1d5db", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "14px", cursor: isUploadingImage ? "wait" : "pointer", gap: "8px" }}
                                 onMouseEnter={(e) => { if (!isUploadingImage) e.currentTarget.style.borderColor = "#16a34a"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; }}
                             >
                                 {isUploadingImage ? (
-                                    <>
-                                        <span style={{ fontSize: "28px" }}>⏳</span>
-                                        <span>Subiendo imagen...</span>
-                                    </>
+                                    <><span style={{ fontSize: "28px" }}>⏳</span><span>Subiendo imagen...</span></>
                                 ) : (
-                                    <>
-                                        <span style={{ fontSize: "28px" }}>🖼</span>
-                                        <span>Haz clic para seleccionar una imagen</span>
-                                        <span style={{ fontSize: "12px" }}>PNG, JPG, WEBP</span>
-                                    </>
+                                    <><span style={{ fontSize: "28px" }}>🖼</span><span>Haz clic para seleccionar una imagen</span><span style={{ fontSize: "12px" }}>PNG, JPG, WEBP</span></>
                                 )}
                             </div>
                         )}
-
-                        {uploadError && (
-                            <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{uploadError}</p>
-                        )}
+                        {uploadError && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{uploadError}</p>}
                     </div>
                 </div>
 
-                {/* Sidebar */}
                 <div style={{ width: "220px", flexShrink: 0 }}>
                     <div style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "20px" }}>
                         <h3 style={{ fontSize: "14px", fontWeight: "600", marginBottom: "4px" }}>Publicación</h3>
                         <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "16px" }}>Estado: {isEditing ? "Editando" : "Borrador"}</p>
-
-                        <button
-                            onClick={() => handleSave(true)}
-                            disabled={isSaving || isUploadingImage}
-                            style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "14px", marginBottom: "8px" }}
-                        >
+                        <button onClick={() => handleSave(true)} disabled={isSaving || isUploadingImage} style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "14px", marginBottom: "8px" }}>
                             Guardar borrador
                         </button>
-                        <button
-                            onClick={() => handleSave(false)}
-                            disabled={isSaving || isUploadingImage}
-                            style={{ width: "100%", padding: "10px", backgroundColor: "#16a34a", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", marginBottom: "8px" }}
-                        >
+                        <button onClick={() => handleSave(false)} disabled={isSaving || isUploadingImage} style={{ width: "100%", padding: "10px", backgroundColor: "#16a34a", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", marginBottom: "8px" }}>
                             {isSaving ? "Guardando..." : "Publicar proyecto"}
                         </button>
                         {isEditing && (
-                            <button
-                                onClick={() => navigate("/mis-proyectos")}
-                                style={{ width: "100%", padding: "10px", border: "1px solid #fecaca", borderRadius: "6px", backgroundColor: "white", color: "#dc2626", cursor: "pointer", fontSize: "14px" }}
-                            >
+                            <button onClick={() => navigate("/mis-proyectos")} style={{ width: "100%", padding: "10px", border: "1px solid #fecaca", borderRadius: "6px", backgroundColor: "white", color: "#dc2626", cursor: "pointer", fontSize: "14px" }}>
                                 Volver sin guardar
                             </button>
                         )}
-
                         <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#f0fdf4", borderRadius: "8px", fontSize: "12px", color: "#15803d" }}>
                             <p style={{ fontWeight: "600", marginBottom: "4px" }}>Notificaciones automáticas:</p>
                             <p>✓ Correo de confirmación a inscritos</p>

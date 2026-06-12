@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProjectById, enrollInProject, cancelEnrollment, getMyEnrollments } from "../services/projects";
 import { type Project } from "../types/project";
-import { BackButton } from "../components/BackButton";
-import { assets } from "../assets/assets";
+import { Header } from "../components/Header";
 import { getCurrentSession } from "../services/auth";
 
 type EnrollmentStatus = "none" | "confirmed" | "cancelled";
@@ -102,15 +101,13 @@ export function ProjectDetailPage() {
     }
 
     const statusColor: Record<string, string> = {
-        Active: "#dcfce7",
-        active: "#dcfce7",
+        Active: "#dcfce7", active: "#dcfce7",
         Draft: "#f3f4f6",
         Cancelled: "#fee2e2",
         Completed: "#dbeafe",
     };
     const statusLabel: Record<string, string> = {
-        Active: "Activo",
-        active: "Activo",
+        Active: "Activo", active: "Activo",
         Draft: "Borrador",
         Cancelled: "Cancelado",
         Completed: "Concluido",
@@ -118,27 +115,12 @@ export function ProjectDetailPage() {
 
     return (
         <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-            {/* Navbar */}
-            <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 40px", backgroundColor: "white", borderBottom: "1px solid #e5e7eb", gap: "24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <BackButton fallbackPath="/proyectos" />
-                    <img src={assets.gazella} alt="Gazella" style={{ width: "70px", objectFit: "contain" }} />
-                    <h1 style={{ fontSize: "22px", fontWeight: "bold", lineHeight: "1.2" }}>
-                        Conservación de<br />la biodiversidad
-                    </h1>
-                </div>
-                {session && (
-                    <button onClick={() => navigate("/dashboard")} style={{ padding: "8px 16px", backgroundColor: "#16a34a", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px" }}>
-                        Mi panel
-                    </button>
-                )}
-            </nav>
+            <Header />
 
             <div style={{ maxWidth: "1000px", margin: "32px auto", padding: "0 24px", display: "flex", gap: "28px" }}>
                 {/* Main content */}
                 <div style={{ flex: 1 }}>
                     <div style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", overflow: "hidden" }}>
-                        {/* Cover image */}
                         <div style={{ width: "100%", height: "280px", backgroundColor: "#d1fae5", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                             {project.coverUri ? (
                                 <img src={project.coverUri} alt={project.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -160,10 +142,8 @@ export function ProjectDetailPage() {
                             </div>
 
                             <h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "16px" }}>{project.title}</h1>
-
                             <p style={{ fontSize: "15px", color: "#374151", lineHeight: "1.7", marginBottom: "24px" }}>{project.description}</p>
 
-                            {/* Meta grid */}
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
                                 {[
                                     { icon: "📍", label: "Lugar", value: project.location },
@@ -178,7 +158,6 @@ export function ProjectDetailPage() {
                                 ))}
                             </div>
 
-                            {/* Progress bar */}
                             <div style={{ marginBottom: "8px" }}>
                                 <div style={{ height: "8px", backgroundColor: "#e5e7eb", borderRadius: "9999px", overflow: "hidden" }}>
                                     <div style={{ height: "100%", width: `${occupancyPct}%`, backgroundColor: occupancyPct >= 90 ? "#ef4444" : "#16a34a", borderRadius: "9999px", transition: "width 0.3s" }} />
@@ -197,7 +176,6 @@ export function ProjectDetailPage() {
 
                 {/* Sidebar */}
                 <div style={{ width: "260px", flexShrink: 0 }}>
-                    {/* Enroll card */}
                     <div style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "20px", marginBottom: "16px" }}>
                         {enrollmentStatus === "confirmed" ? (
                             <>
@@ -240,7 +218,6 @@ export function ProjectDetailPage() {
                         )}
                     </div>
 
-                    {/* Info card */}
                     <div style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "20px" }}>
                         <h3 style={{ fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "12px" }}>Voluntarios inscritos</h3>
                         <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
@@ -262,7 +239,6 @@ export function ProjectDetailPage() {
                 </div>
             </div>
 
-            {/* Confirm enroll dialog */}
             {showConfirmDialog && (
                 <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                     <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "380px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
@@ -286,7 +262,6 @@ export function ProjectDetailPage() {
                 </div>
             )}
 
-            {/* Cancel enrollment dialog */}
             {showCancelDialog && (
                 <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                     <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "380px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>

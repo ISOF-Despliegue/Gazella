@@ -12,9 +12,11 @@ export function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [role, setRole] = useState<'volunteer' | 'editor'>('volunteer');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+    const allowEditorRegistration = import.meta.env.VITE_ALLOW_EDITOR_REGISTRATION === 'true';
 
     const handleRegister = async () => {
         setError('');
@@ -38,6 +40,7 @@ export function RegisterPage() {
                 name: trimmedName,
                 parentalSurname: trimmedParentalSurname || undefined,
                 maternalSurname: trimmedMaternalSurname || undefined,
+                role: allowEditorRegistration ? role : undefined,
             });
 
             saveLocalProfile({
@@ -47,7 +50,7 @@ export function RegisterPage() {
                 maternalSurname: trimmedMaternalSurname || null,
                 bio: null,
                 pfpUri: null,
-                role: 'volunteer',
+                role,
                 joinedAt: new Date().toISOString(),
             });
 
@@ -179,6 +182,22 @@ export function RegisterPage() {
                         style={inputStyle}
                     />
                 </div>
+
+                {allowEditorRegistration && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#374151' }}>
+                            Rol para pruebas
+                        </label>
+                        <select
+                            value={role}
+                            onChange={(event) => setRole(event.target.value as 'volunteer' | 'editor')}
+                            style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '12px 16px', fontSize: '16px' }}
+                        >
+                            <option value="volunteer">Voluntario</option>
+                            <option value="editor">Editor</option>
+                        </select>
+                    </div>
+                )}
 
                 {/* Botón registrarse */}
                 <button

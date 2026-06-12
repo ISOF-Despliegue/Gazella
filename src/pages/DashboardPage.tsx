@@ -72,6 +72,7 @@ export function DashboardPage() {
     };
 
     const isOrganizer = session?.roles?.includes('organizer');
+    const isEditor = session?.roles?.some((role) => ['editor', 'moderator'].includes(role.toLowerCase()));
 
     return (
         <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
@@ -187,9 +188,14 @@ export function DashboardPage() {
                     {[
                         { label: 'Escribir nuevo articulo', path: '/nuevo-articulo' },
                         { label: 'Mis articulos', path: '/articulos' },
+                        { label: 'Estadisticas de autor', path: '/mis-articulos/estadisticas' },
                         isOrganizer
                             ? { label: 'Mis proyectos', path: '/mis-proyectos' }
                             : { label: 'Mis proyectos', path: '/mis-inscripciones' },
+                        ...(isEditor ? [
+                            { label: 'Pendientes de revision', path: '/editor/articulos' },
+                            { label: 'Gestionar publicados', path: '/editor/articulos/publicados' },
+                        ] : []),
                     ].map((item) => (
                         <button
                             key={item.label}

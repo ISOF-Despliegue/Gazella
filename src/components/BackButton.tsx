@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { getCurrentSession } from '../services/auth';
 
 type BackButtonProps = {
     fallbackPath?: string;
@@ -9,12 +10,12 @@ export function BackButton({ fallbackPath = '/home', label = 'Regresar' }: BackB
     const navigate = useNavigate();
 
     const handleBack = () => {
-        if (window.history.length > 1) {
-            navigate(-1);
-            return;
-        }
+        const session = getCurrentSession();
+        const safeFallback = session && ['/login', '/registro', '/verificar', '/home'].includes(fallbackPath)
+            ? '/dashboard'
+            : fallbackPath;
 
-        navigate(fallbackPath);
+        navigate(safeFallback);
     };
 
     return (

@@ -63,3 +63,46 @@ export interface PendingArticle {
 export interface RejectArticleRequest {
     reason: string;
 }
+
+export type PublishedArticleStatus = "published" | "deleted";
+
+export interface PublishedArticle {
+    id: string;
+    title: string;
+    authorName: string;
+    publishedAt: string;
+    likesCount: number;
+    commentsCount: number;
+    status: PublishedArticleStatus;
+}
+
+export interface PublishedArticlesResponse {
+    publishedArticles: PublishedArticle[];
+    totalEntries: number;
+    currentPage: number;
+    pageCount: number;
+    pageSize: number;
+}
+
+export interface TopAuthorArticle {
+    id: string;
+    title: string;
+    likesCount: number;
+    commentsCount: number;
+}
+
+export interface RecentAuthorActivity {
+    latestCommentId?: string;
+    latestCommentArticleId?: string;
+    latestCommentPostedAt?: string;
+    likesToday: number;
+}
+
+export interface AuthorStats {
+    topArticles: TopAuthorArticle[];
+    recentActivity: RecentAuthorActivity;
+    totalLikes: number;
+    totalComments: number;
+    publishedArticlesCount: number;
+    engagementRate: number;
+}

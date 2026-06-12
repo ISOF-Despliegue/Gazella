@@ -83,6 +83,7 @@ export function EditProfilePage() {
 
         try {
             const result = await uploadMedia(file);
+            console.log("URL recibida:", result.url);
             setPfpUri(result.url);
         } catch (err) {
             const message = err instanceof MediaUploadError
@@ -176,6 +177,7 @@ export function EditProfilePage() {
                             overflow: 'hidden',
                         }}>
                             <SafeImage
+                                key={pfpUri}
                                 src={pfpUri}
                                 alt={displayName}
                                 variant="avatar"
