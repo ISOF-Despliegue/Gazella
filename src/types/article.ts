@@ -43,3 +43,23 @@ export interface ArticleSearchResult {
     pageCount: number;
     pageSize: number;
 }
+
+export type ArticleReviewStatus = "pending" | "approved" | "rejected";
+
+export interface PendingArticle {
+    id: string;
+    title: string;
+    authorId: string;
+    authorName: string;
+    categoryId: string;
+    categoryName: string;
+    submittedAt: string;
+    summary: string;
+    coverUri?: string;
+    content: OutputData;
+    status: ArticleReviewStatus;
+}
+
+export interface RejectArticleRequest {
+    reason: string;
+}
