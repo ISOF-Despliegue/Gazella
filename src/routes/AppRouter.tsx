@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
@@ -20,10 +21,22 @@ import { CreateProjectPage } from "../pages/CreateProjectPage";
 import { RoleGuard } from "../components/RoleGuard";
 import { AuthorStatsPage } from "../pages/AuthorStatsPage";
 import { ManagePublishedArticlesPage } from "../pages/ManagePublishedArticlesPage";
+import { trackCurrentRoute } from "../components/BackButton";
+
+function NavigationHistoryTracker() {
+    const location = useLocation();
+
+    useEffect(() => {
+        trackCurrentRoute(`${location.pathname}${location.search}${location.hash}`);
+    }, [location]);
+
+    return null;
+}
 
 export function AppRouter() {
     return (
         <BrowserRouter>
+            <NavigationHistoryTracker />
             <Routes>
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -37,8 +50,6 @@ export function AppRouter() {
                 <Route path="/articulos" element={<ArticlesListPage />} />
                 <Route path="/nuevo-articulo" element={<WriteArticlePage />} />
                 <Route path="/articulo/:articleId" element={<ReadArticlePage />} />
-                <Route path="/editor/articulos" element={<PendingArticlesPage />} />
-                <Route path="/editor/articulos/:articleId/revision" element={<ReviewArticlePage />} />
                 <Route path="/editor/articulos" element={<RoleGuard allowedRoles={["editor", "moderator"]}><PendingArticlesPage /></RoleGuard>} />
                 <Route path="/editor/articulos/:articleId/revision" element={<RoleGuard allowedRoles={["editor", "moderator"]}><ReviewArticlePage /></RoleGuard>} />
                 <Route path="/editor/articulos/publicados" element={<RoleGuard allowedRoles={["editor", "moderator"]}><ManagePublishedArticlesPage /></RoleGuard>} />

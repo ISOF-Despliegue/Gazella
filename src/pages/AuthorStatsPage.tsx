@@ -58,7 +58,7 @@ export function AuthorStatsPage() {
         <div style={pageStyle}>
             <nav style={navStyle}>
                 <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <BackButton fallbackPath="/dashboard" />
+                    <BackButton fallbackPath="/dashboard" preferFallback />
                     <img src={assets.gazella} alt="Gazella" style={{ width: "70px", objectFit: "contain" }} />
                     <h1 style={{ fontSize: "22px", fontWeight: "bold", lineHeight: 1.2 }}>
                         Conservación de<br />la biodiversidad

@@ -63,7 +63,7 @@ export function ProfilePage() {
         <div style={{ minHeight: '100vh', backgroundColor: 'white', padding: '24px 36px' }}>
             <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                    <BackButton fallbackPath="/dashboard" />
+                    <BackButton fallbackPath="/dashboard" preferFallback />
                     <button
                         onClick={() => navigate('/dashboard')}
                         style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
