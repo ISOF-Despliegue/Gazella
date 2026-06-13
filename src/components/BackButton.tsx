@@ -1,19 +1,50 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentSession } from '../services/auth';
+
+const PUBLIC_PATHS = ['/', '/login', '/registro', '/verificar', '/auth/callback', '/home'];
+const CURRENT_ROUTE_KEY = 'gazella.currentRoute';
+const PREVIOUS_ROUTE_KEY = 'gazella.previousRoute';
 
 type BackButtonProps = {
     fallbackPath?: string;
     label?: string;
+    preferFallback?: boolean;
 };
 
-export function BackButton({ fallbackPath = '/home', label = 'Regresar' }: BackButtonProps) {
+function isPublicPath(path: string) {
+    return PUBLIC_PATHS.some((publicPath) => path === publicPath || path.startsWith(`${publicPath}?`));
+}
+
+function getTrackedPreviousRoute(currentRoute: string) {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    const previousRoute = window.sessionStorage.getItem(PREVIOUS_ROUTE_KEY);
+
+    if (!previousRoute || previousRoute === currentRoute) {
+        return null;
+    }
+
+    return previousRoute;
+}
+
+export function BackButton({ fallbackPath = '/dashboard', label = 'Regresar', preferFallback = false }: BackButtonProps) {
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleBack = () => {
         const session = getCurrentSession();
-        const safeFallback = session && ['/login', '/registro', '/verificar', '/home'].includes(fallbackPath)
+        const currentRoute = `${location.pathname}${location.search}${location.hash}`;
+        const previousRoute = getTrackedPreviousRoute(currentRoute);
+        const safeFallback = session && isPublicPath(fallbackPath)
             ? '/dashboard'
             : fallbackPath;
+
+        if (!preferFallback && previousRoute && !(session && isPublicPath(previousRoute))) {
+            navigate(previousRoute);
+            return;
+        }
 
         navigate(safeFallback);
     };
@@ -42,4 +73,18 @@ export function BackButton({ fallbackPath = '/home', label = 'Regresar' }: BackB
             {label}
         </button>
     );
+}
+
+export function trackCurrentRoute(path: string) {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    const currentRoute = window.sessionStorage.getItem(CURRENT_ROUTE_KEY);
+
+    if (currentRoute && currentRoute !== path) {
+        window.sessionStorage.setItem(PREVIOUS_ROUTE_KEY, currentRoute);
+    }
+
+    window.sessionStorage.setItem(CURRENT_ROUTE_KEY, path);
 }

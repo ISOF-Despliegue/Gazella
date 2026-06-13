@@ -65,7 +65,7 @@ export function Header() {
                 gap: '24px',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                    <BackButton fallbackPath="/perfil" />
+                    <BackButton fallbackPath="/dashboard" />
                     <button
                         onClick={() => navigate('/dashboard')}
                         style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
