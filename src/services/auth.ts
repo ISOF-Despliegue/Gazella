@@ -99,7 +99,9 @@ function saveSession(tokenResponse: TokenResponse): AuthSession {
 
 export function getCurrentSession(): AuthSession | null {
     const accessToken = localStorage.getItem("gazella_access_token");
-    if (!accessToken) return null;
+    if (!accessToken) {
+        return null;
+    }
 
     const expiresAt = Number(localStorage.getItem("gazella_access_token_expires_at") ?? "0");
     if (expiresAt && Date.now() >= expiresAt) {
@@ -131,8 +133,8 @@ export function logout() {
 export function hasAnyRole(session: AuthSession | null, allowedRoles: string[]) {
     if (!session) return false;
 
-    const normalizedRoles = session.roles.map((role) => role.toLowerCase());
-    return allowedRoles.some((role) => normalizedRoles.includes(role.toLowerCase()));
+    const normalizedRoles = new Set(session.roles.map((role) => role.toLowerCase()));
+    return allowedRoles.some((role) => normalizedRoles.has(role.toLowerCase()));
 }
 
 export async function register(input: RegisterInput) {

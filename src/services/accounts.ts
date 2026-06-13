@@ -33,6 +33,21 @@ export async function getMyAccount() {
     return apiRequest<AccountProfile>("/accounts/me");
 }
 
+export interface PublicAccountProfile {
+    id: string;
+    pfpUri?: string | null;
+    name: string;
+    parentalSurname?: string | null;
+    maternalSurname?: string | null;
+    bio?: string | null;
+    role: string;
+    joinedAt: string;
+}
+
+export async function getProfileById(accountId: string) {
+    return apiRequest<PublicAccountProfile>(`/accounts/${accountId}`);
+}
+
 export async function updateMyAccount(input: UpdateAccountInput) {
     return apiRequest<{ message: string }>("/accounts", {
         method: "PATCH",

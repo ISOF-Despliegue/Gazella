@@ -7,7 +7,7 @@ import {
     approveArticle,
     getPendingArticle,
     rejectArticle,
-} from "../services/articles";
+} from "../services/articles/articles";
 import type { PendingArticle } from "../types/article";
 
 function formatDate(value: string) {

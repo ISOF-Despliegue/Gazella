@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
-import { getCategories, searchArticles } from '../services/articles';
+import { getCategories, searchArticles } from '../services/articles/articles';
 import { SafeImage } from '../components/SafeImage';
 import { type Category, type ArticleSearchEntry } from '../types/article';
 
@@ -348,8 +348,8 @@ export function ArticlesListPage() {
 
                                 {/* Dates */}
                                 <div style={{ textAlign: 'right', fontSize: '13px', color: '#374151', flexShrink: 0 }}>
-                                    <p><strong>Publicado:</strong> {article.publishedAt}</p>
-                                    <p><strong>Última edición:</strong> {article.lastUpdatedAt}</p>
+                                    <p><strong>Publicado:</strong> {new Date(article.publishedAt).toLocaleDateString()}</p>
+                                    <p><strong>Última edición:</strong> {new Date(article.lastUpdatedAt).toLocaleDateString()}</p>
                                 </div>
                             </div>
                         ))}

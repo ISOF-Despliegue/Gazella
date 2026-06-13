@@ -1,7 +1,7 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { type OutputData } from '@editorjs/editorjs';
 import { Editor } from '../components/Editor';
-import { getCategories, publishDraft, submitDraft } from '../services/articles';
+import { getCategories, publishDraft, submitDraft } from '../services/articles/articles';
 import { uploadMedia } from '../services/media';
 import { getLocalProfile } from '../services/accounts';
 import { Header } from '../components/Header';

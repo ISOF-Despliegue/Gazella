@@ -1,25 +1,15 @@
-import { apiRequest } from "./api";
+import { apiRequest } from "../api";
 import {
     type Article,
     type ArticleSearchResult,
     type AuthorStats,
     type Category,
+    type FeaturedArticle,
     type PendingArticle,
     type PublishedArticle,
     type PublishedArticlesResponse,
     type RejectArticleRequest,
-} from "../types/article";
-
-type ArticleSearchEntry = {
-    id: string;
-    title: string;
-    authorName?: string;
-    summary?: string;
-};
-
-type ArticleSearchResponse = {
-    entries: ArticleSearchEntry[];
-};
+} from "../../types/article";
 
 export interface SearchArticlesParams {
     pageIndex?: number;
@@ -48,24 +38,20 @@ export type SubmitDraftResponse = {
     id: string;
 }
 
-export async function getFeaturedArticles(): Promise<Article[]> {
-    const searchParams = new URLSearchParams({
-        pageIndex: "0",
-        pageSize: "10",
-        sortBy: "likes",
+export async function getArticle(articleId: string): Promise<Article> {
+    const response = await apiRequest<Article>(`/articles/articles/${articleId}`, {
+        skipAuth: true
     });
 
-    const response = await apiRequest<ArticleSearchResponse>(`/articles/search?${searchParams.toString()}`, {
+    return response;
+}
+
+export async function getFeaturedArticles(amount: number = 3): Promise<FeaturedArticle[]> {
+    const response = await apiRequest<FeaturedArticle[]>(`/articles/featured?amount=${amount}`, {
         skipAuth: true,
     });
 
-    return response.entries.slice(0, 3).map((entry) => ({
-        id: entry.id,
-        title: entry.title,
-        author: entry.authorName || "Autor no disponible",
-        summary: entry.summary || "Sin resumen disponible",
-        likes: 0,
-    }));
+    return response ?? [];
 }
 
 export async function searchArticles(params: SearchArticlesParams): Promise<ArticleSearchResult> {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BackButton } from "../components/BackButton";
 import { assets } from "../assets/assets";
-import { getMyAuthorStats } from "../services/articles";
+import { getMyAuthorStats } from "../services/articles/articles";
 import type { AuthorStats } from "../types/article";
 
 function getRecentActivityText(stats: AuthorStats) {

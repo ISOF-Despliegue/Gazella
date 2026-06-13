@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BackButton } from "../components/BackButton";
 import { assets } from "../assets/assets";
-import { getPendingArticles } from "../services/articles";
+import { getPendingArticles } from "../services/articles/articles";
 import type { PendingArticle } from "../types/article";
 
 function formatDate(value: string) {

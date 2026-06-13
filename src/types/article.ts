@@ -5,23 +5,41 @@ export interface Category {
     name: string;
 }
 
-export interface DraftArticle {
-    id: string | undefined;
-    title: string;
-    coverUri: string;
-    summary: string;
-    categoryId: string;
+export interface Comment {
+    id: string;
     authorId: string;
-    content: OutputData
+    authorName: string;
+    authorPfpUri: string;
+    content: string;
+    postedAt: string;
 }
 
 export interface Article {
-    id: number | string;
+    id: string;
     title: string;
-    author: string;
+    coverUri: string;
     summary: string;
-    imageUrl?: string;
-    likes: number;
+    category: string;
+    publishedAt: string;
+    lastUpdatedAt: string;
+    status: string;
+    content: string;
+    authorId: string;
+    authorName: string;
+    authorPfpUri: string;
+    likesCount: number;
+    commentsCount: number;
+    recentComments: Comment[] 
+}
+
+export interface FeaturedArticle {
+    id: string;
+    title: string;
+    coverUri: string;
+    authorId: string;
+    authorName: string;
+    authorPfpUri: string;
+    summary: string;
 }
 
 export interface ArticleSearchEntry {
@@ -39,6 +57,14 @@ export interface ArticleSearchEntry {
 export interface ArticleSearchResult {
     entries: ArticleSearchEntry[];
     totalEntries: number;
+    currentPage: number;
+    pageCount: number;
+    pageSize: number;
+}
+
+export interface GetOlderCommentsResult {
+    comments: Comment[],
+    totalComments: number;
     currentPage: number;
     pageCount: number;
     pageSize: number;

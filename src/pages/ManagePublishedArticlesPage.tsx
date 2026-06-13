@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BackButton } from "../components/BackButton";
 import { assets } from "../assets/assets";
-import { deletePublishedArticle, getPublishedArticles } from "../services/articles";
+import { deletePublishedArticle, getPublishedArticles } from "../services/articles/articles";
 import type { PublishedArticle } from "../types/article";
 
 function formatDate(value: string) {

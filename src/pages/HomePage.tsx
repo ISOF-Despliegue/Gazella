@@ -6,7 +6,7 @@ import { ProjectCard } from '../components/ProjectCard';
 import { type Article } from '../types/article';
 import { type Project } from '../types/project';
 import { getCurrentSession } from '../services/auth';
-import { getFeaturedArticles } from '../services/articles';
+import { getFeaturedArticles } from '../services/articles/articles';
 import { getUpcomingProjects } from '../services/projects';
 import { assets } from '../assets/assets';
 
