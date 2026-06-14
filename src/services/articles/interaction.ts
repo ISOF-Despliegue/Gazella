@@ -9,6 +9,7 @@ export interface PostCommentRequest {
 
 export interface PostCommentResponse {
     success: boolean;
+    commentId: string;
     postedAt: string;
 }
 

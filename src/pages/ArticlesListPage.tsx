@@ -313,11 +313,11 @@ export function ArticlesListPage() {
                                 key={article.id}
                                 role="button"
                                 tabIndex={0}
-                                onClick={() => navigate(`/articulo/${article.id}`)}
+                                onClick={() => navigate(`/articulos/${article.id}`)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
-                                        navigate(`/articulo/${article.id}`);
+                                        navigate(`/articulos/${article.id}`);
                                     }
                                 }}
                                 style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 16px', cursor: 'pointer' }}

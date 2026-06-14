@@ -2,18 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArticleCard } from '../components/ArticleCard';
 import { ProjectCard } from '../components/ProjectCard';
-import { type Article } from '../types/article';
+import { type FeaturedArticle } from '../types/article';
+import { getFeaturedArticles } from '../services/articles/articles';
 import { type Project } from '../types/project';
 import { getLocalProfile, getMyAccount, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, logout, type AuthSession } from '../services/auth';
 import { getUpcomingProjects } from '../services/projects';
 import { BackButton } from '../components/BackButton';
 import { assets } from '../assets/assets';
-
-const MOCK_ARTICLES: Article[] = [
-    { id: 1, title: 'La Sexta Extincion Masiva', author: 'Abel Yong', summary: 'La extincion es un problema...', likes: 0 },
-    { id: 2, title: 'La Basura nos esta Acabando', author: 'Carlos Castillo', summary: 'Basura en los oceanos...', likes: 0 },
-];
 
 function getFullName(profile: EditableAccountProfile | null, session: AuthSession | null) {
     if (profile?.name) {
@@ -28,10 +24,15 @@ function getFullName(profile: EditableAccountProfile | null, session: AuthSessio
 export function DashboardPage() {
     const navigate = useNavigate();
     const [session, setSession] = useState<AuthSession | null>(null);
+
     const [profile, setProfile] = useState<EditableAccountProfile | null>(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+    
     const [isLoadingProjects, setIsLoadingProjects] = useState(true);
     const [projects, setProjects] = useState<Project[]>([]);
+
+    const [isLoadingArticles, setIsLoadingArticles] = useState(true);
+    const [articles, setArticles] = useState<FeaturedArticle[]>([]);
 
     useEffect(() => {
         const currentSession = getCurrentSession();
@@ -50,6 +51,11 @@ export function DashboardPage() {
             })
             .catch(() => undefined)
             .finally(() => setIsLoadingProfile(false));
+
+        getFeaturedArticles(3)
+            .then(setArticles)
+            .catch(() => setArticles([]))
+            .finally(() => setIsLoadingArticles(false));
         
         getUpcomingProjects()
             .then(setProjects)
@@ -187,7 +193,7 @@ export function DashboardPage() {
                 <div style={{ display: 'flex', gap: '16px' }}>
                     {[
                         { label: 'Escribir nuevo articulo', path: '/nuevo-articulo' },
-                        { label: 'Mis articulos', path: '/articulos' },
+                        { label: 'Mis articulos', path: '/mis-articulos' },
                         { label: 'Estadisticas de autor', path: '/mis-articulos/estadisticas' },
                         isOrganizer
                             ? { label: 'Mis proyectos', path: '/mis-proyectos' }
@@ -223,11 +229,26 @@ export function DashboardPage() {
                 <div style={{ display: 'flex', gap: '40px' }}>
                     <section style={{ flex: 1 }}>
                         <h2 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.05em' }}>ARTICULOS DESTACADOS</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {MOCK_ARTICLES.map((article) => (
-                                <ArticleCard key={article.id} article={article} />
-                            ))}
-                        </div>
+                        
+                        {isLoadingArticles && (
+                            <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
+                                Cargando articulos...
+                            </div>
+                        )}
+
+                        {!isLoadingArticles && articles.length === 0 && (
+                            <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '14px', border: '1px dashed #e5e7eb', borderRadius: '8px' }}>
+                                No hay articulos destacados por el momento.
+                            </div>
+                        )}
+
+                        {!isLoadingArticles && articles.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {articles.map((article) => (
+                                    <ArticleCard key={article.id} article={article} />
+                                ))}
+                            </div>
+                        )}
                         <button
                             onClick={() => navigate('/articulos')}
                             style={{
@@ -246,23 +267,31 @@ export function DashboardPage() {
 
                     <section style={{ flex: 1 }}>
                         <h2 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.05em' }}>PROXIMOS PROYECTOS DE VOLUNTARIADO</h2>
-                        {isLoadingProjects ? (
+                        
+                        {isLoadingProjects && (
                             <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
                                 Cargando proyectos...
                             </div>
-                        ) : projects.length === 0 ? (
+                        )}
+
+                        {!isLoadingProjects && projects.length === 0 && (
                             <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '14px', border: '1px dashed #e5e7eb', borderRadius: '8px' }}>
                                 No hay proyectos disponibles por el momento.
                             </div>
-                        ) : (
+                        )}
+
+                        {!isLoadingProjects && projects.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {projects.map((project) => (
-                                    <div key={project.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/proyectos/${project.id}`)}>
+                                    <div
+                                        key={project.id} style={{ cursor: 'pointer' }}
+                                        onClick={() => navigate(`/proyectos/${project.id}`)}>
                                         <ProjectCard project={project} />
                                     </div>
                                 ))}
                             </div>
                         )}
+
                         <button
                             onClick={() => navigate('/proyectos')}
                             style={{ marginTop: '16px', padding: '8px 20px', border: '1px solid #333', borderRadius: '4px', backgroundColor: 'white', cursor: 'pointer', fontSize: '13px' }}

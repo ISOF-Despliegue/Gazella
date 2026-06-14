@@ -3,12 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArticleContent } from "../components/ArticleContent";
 import { Header } from "../components/Header";
 import { SafeImage } from "../components/SafeImage";
-import {
-    approveArticle,
-    getPendingArticle,
-    rejectArticle,
-} from "../services/articles/articles";
-import type { PendingArticle } from "../types/article";
+import { getArticle } from "../services/articles/articles";
+import { approveArticle, rejectArticle } from "../services/articles/drafts";
+import type { Article } from "../types/article";
 
 function formatDate(value: string) {
     return new Intl.DateTimeFormat("es-MX", {
@@ -21,13 +18,13 @@ function formatDate(value: string) {
 export function ReviewArticlePage() {
     const navigate = useNavigate();
     const { articleId = "" } = useParams();
-    const [article, setArticle] = useState<PendingArticle | null>(null);
+    const [article, setArticle] = useState<Article | null>(null);
     const [rejectionReason, setRejectionReason] = useState("");
     const [status, setStatus] = useState("Cargando artículo...");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        getPendingArticle(articleId)
+        getArticle(articleId)
             .then((item) => {
                 setArticle(item);
                 setStatus("");
@@ -60,7 +57,7 @@ export function ReviewArticlePage() {
 
         setIsSubmitting(true);
         try {
-            await rejectArticle(article.id, { reason: rejectionReason.trim() });
+            await rejectArticle(article.id, { rejectionReason: rejectionReason.trim() });
             navigate("/editor/articulos", {
                 replace: true,
                 state: { notice: "Artículo rechazado correctamente." },
@@ -98,8 +95,8 @@ export function ReviewArticlePage() {
                                 <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{article.title}</h1>
                                 <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-500">
                                     <span>Por <strong className="text-gray-700">{article.authorName}</strong></span>
-                                    <span>Categoría: <strong className="text-gray-700">{article.categoryName}</strong></span>
-                                    <span>Enviado: <strong className="text-gray-700">{formatDate(article.submittedAt)}</strong></span>
+                                    <span>Categoría: <strong className="text-gray-700">{article.category}</strong></span>
+                                    <span>Enviado: <strong className="text-gray-700">{formatDate(article.lastUpdatedAt)}</strong></span>
                                 </div>
                             </div>
 

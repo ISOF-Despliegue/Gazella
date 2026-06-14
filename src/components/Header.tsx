@@ -4,6 +4,7 @@ import { getLocalProfile, getMyAccount, type EditableAccountProfile } from '../s
 import { getCurrentSession, logout, type AuthSession } from '../services/auth';
 import { BackButton } from '../components/BackButton';
 import { assets } from '../assets/assets';
+import { SafeImage } from './SafeImage';
 
 function getFullName(profile: EditableAccountProfile | null, session: AuthSession | null) {
     if (profile?.name) {
@@ -59,7 +60,7 @@ export function Header() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '16px 40px',
+                padding: '10px 40px',
                 backgroundColor: 'white',
                 borderBottom: '1px solid #e5e7eb',
                 gap: '24px',
@@ -70,7 +71,11 @@ export function Header() {
                         onClick={() => navigate('/dashboard')}
                         style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                     >
-                        <img src={assets.gazella} alt="Gazella" style={{ width: '62px', objectFit: 'contain' }} />
+                        <img
+                            src={assets.gazella}
+                            alt="Gazella"
+                            style={{ width: '62px', objectFit: 'contain' }}
+                        />
                         <h1 style={{ fontSize: '40px', fontWeight: 'bold' }}>Gazella</h1>
                     </button>
                 </div>
@@ -89,7 +94,12 @@ export function Header() {
                         overflow: 'hidden',
                     }}>
                         {profile?.pfpUri ? (
-                            <img src={profile.pfpUri} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <SafeImage
+                                src={profile.pfpUri}
+                                alt={displayName}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                variant="avatar"
+                            />
                         ) : initials}
                     </div>
                     <button

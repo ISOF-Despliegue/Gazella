@@ -1,10 +1,12 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { type OutputData } from '@editorjs/editorjs';
 import { Editor } from '../components/Editor';
-import { getCategories, publishDraft, submitDraft } from '../services/articles/articles';
+import { getCategories } from '../services/articles/articles';
+import { publishDraft, submitDraft } from "../services/articles/drafts"
 import { uploadMedia } from '../services/media';
 import { getLocalProfile } from '../services/accounts';
 import { Header } from '../components/Header';
+import { ArticleContent } from '../components/ArticleContent';
 
 interface Category {
     id: string;
@@ -123,14 +125,16 @@ export const WriteArticlePage = () => {
         <div className="min-h-screen bg-gray-100 flex flex-col w-full">
             <Header />
 
+            <div style={{ display: 'flex', padding: '20px 40px', gap: '20px' }} />
+
             {/* CONTENEDOR PRINCIPAL GRIS */}
-            <main className="flex-1 w-full p-6 sm:p-10 flex justify-center items-start">
+            <main className="flex-1 w-full flex justify-center items-start p28">
                 
                 {/* ÁREA DE TRABAJO (CONTENEDOR BLANCO) */}
-                <div className="w-full max-w-6xl bg-white border border-gray-300 rounded-2xl shadow-sm p-8 sm:p-12 flex flex-col gap-4">
+                <div className="w-full max-w-5xl bg-white border border-gray-300 rounded-2xl shadow-sm p-8 sm:p-12 flex flex-col gap-4">
                     
                     {/* SECCIÓN 1: TÍTULO SUPERIOR */}
-                    <div className="border-b border-gray-200 pb-4">
+                    <div className="border-b border-gray-200">
                         <h2 className="text-3xl font-bold text-gray-800">
                             Escribe tu artículo de conservación
                         </h2>
@@ -207,15 +211,13 @@ export const WriteArticlePage = () => {
                     </div>
 
                     {/* SECCIÓN 3: LIENZO DE ESCRITURA */}
-                    {/* Al estar en un contenedor flex (el cuadro blanco principal), envolverlo en flex justify-center asegura el centrado perfecto horizontalmente */}
                     <div className="w-full flex justify-center">
-                        <div className="w-full max-w-4xl border-2 border-gray-300 rounded-xl p-8 h-[450px] overflow-y-auto bg-white shadow-inner focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-colors">
+                        <div className="w-full max-w-4xl border-2 border-gray-300 rounded-xl p-8 h-[300px] overflow-y-auto bg-white shadow-inner focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-colors">
                             <Editor onChange={(data) => setContent(data)} />
                         </div>
                     </div>
 
                     {/* SECCIÓN 4: BOTONES DE ACCIÓN */}
-                    {/* Se alinean estrictamente a la derecha y nunca tocan los bordes porque el padre principal tiene p-12 */}
                     <div className="flex justify-end items-center gap-4 border-t border-gray-100 pt-4">
                         <button
                             onClick={handleSaveDraft}
@@ -253,16 +255,7 @@ export const WriteArticlePage = () => {
                                 Cerrar
                             </button>
                         </div>
-                        <div className="p-10 overflow-y-auto flex-1 bg-white">
-                            {coverUri && (
-                                <img src={coverUri} alt="Portada" className="w-full h-72 object-cover rounded-xl mb-8" />
-                            )}
-                            <h1 className="text-5xl font-extrabold mb-6 text-gray-900">{title || 'Título vacío'}</h1>
-                            <p className="text-gray-500 text-lg italic border-l-4 border-gray-300 pl-6 mb-10">{summary || 'Sin resumen'}</p>
-                            <div className="prose max-w-none text-gray-400 text-base italic">
-                                [Aquí se renderizarán los bloques de contenido]
-                            </div>
-                        </div>
+                        <ArticleContent content={JSON.stringify(content)}/>
                     </div>
                 </div>
             )}

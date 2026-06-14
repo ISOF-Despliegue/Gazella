@@ -1,5 +1,3 @@
-import type { OutputData } from "@editorjs/editorjs";
-
 export interface Category {
     id: string;
     name: string;
@@ -70,27 +68,11 @@ export interface GetOlderCommentsResult {
     pageSize: number;
 }
 
-export type ArticleReviewStatus = "pending" | "approved" | "rejected";
-
-export interface PendingArticle {
-    id: string;
-    title: string;
-    authorId: string;
-    authorName: string;
-    categoryId: string;
-    categoryName: string;
-    submittedAt: string;
-    summary: string;
-    coverUri?: string;
-    content: OutputData;
-    status: ArticleReviewStatus;
-}
-
 export interface RejectArticleRequest {
     reason: string;
 }
 
-export type PublishedArticleStatus = "published" | "deleted";
+export type PublishedArticleStatus = "Published" | "Removed";
 
 export interface PublishedArticle {
     id: string;
@@ -102,12 +84,23 @@ export interface PublishedArticle {
     status: PublishedArticleStatus;
 }
 
-export interface PublishedArticlesResponse {
+export interface PublishedArticlesResult {
     publishedArticles: PublishedArticle[];
     totalEntries: number;
     currentPage: number;
     pageCount: number;
     pageSize: number;
+}
+
+export interface MyArticle {
+    id: string;
+    title: string;
+    coverUri: string;
+    status: string;
+    category: string;
+    publishedAt: string;
+    likes: string;
+    comments: string;
 }
 
 export interface TopAuthorArticle {

@@ -15,6 +15,17 @@ import {
 import type { Article, FeaturedArticle, Comment } from '../types/article';
 import { SafeImage } from '../components/SafeImage';
 
+function formatDate(value?: string) : string {
+    if (!value) {
+        return "—";
+    }
+    const d = value.includes("T") ? new Date(value) : new Date(value + "T00:00:00");
+    if (Number.isNaN(d.getTime())) {
+        return value;
+    }
+    return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", year: "numeric" }).format(d);
+}
+
 export const ReadArticlePage = () => {
     const { articleId } = useParams<{ articleId: string }>();
     const navigate = useNavigate();
@@ -49,10 +60,11 @@ export const ReadArticlePage = () => {
             setIsLoading(true);
             setError(null);
             try {
-                const [fetchedArticle, fetchedFeatured, userLiked] = await Promise.all([
-                    getArticle(articleId),
-                    getFeaturedArticles(3),
-                    checkIfExistingLike(articleId).catch(() => false) // if user is not logged in or there's an error, we assume they haven't liked the article 
+                const fetchedArticle = await getArticle(articleId);
+
+                const [fetchedFeatured, userLiked] = await Promise.all([
+                    fetchedArticle.status === "Published" ? getFeaturedArticles(3) : Promise.resolve([]),
+                    checkIfExistingLike(articleId).catch(() => false)
                 ]);
 
                 const fetchedProfile = await getProfileById(fetchedArticle.authorId).catch((err) => {
@@ -80,9 +92,10 @@ export const ReadArticlePage = () => {
     }, [articleId]);
 
     const handleLikeToggle = async () => {
-        if (!articleId) {
+        if (!articleId || article?.status !== "Published") {
             return;
         }
+
         if (!localProfile) {
             return alert("Debes iniciar sesión para dar me gusta.");
         }
@@ -109,7 +122,7 @@ export const ReadArticlePage = () => {
 
     const handleSendComment = async () => {
         const text = commentInput.trim();
-        if (!text || !articleId) {
+        if (!text || !articleId || article?.status !== "Published") {
             return;
         }
         if (!localProfile) {
@@ -126,12 +139,12 @@ export const ReadArticlePage = () => {
 
             if (res.success) {
                 const newComment: Comment = {
-                    id: `temp-${Date.now()}`,
+                    id: res.commentId,
                     authorId: localProfile.id || "me",
                     authorName: currentUserName,
                     authorPfpUri: currentUserPfp,
                     content: text,
-                    postedAt: res.postedAt
+                    postedAt: formatDate(res.postedAt)
                 };
 
                 setComments(prev => [newComment, ...prev]);
@@ -149,7 +162,13 @@ export const ReadArticlePage = () => {
     };
 
     const handleFocusComment = () => {
-        if (commentInputRef.current) commentInputRef.current.focus();
+        if (article?.status !== "Published") {
+            return;
+        }
+
+        if (commentInputRef.current) {
+            commentInputRef.current.focus();
+        }
     };
 
     const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,17 +197,31 @@ export const ReadArticlePage = () => {
         );
     }
 
-    // --- RENDERIZADO PRINCIPAL ---
+    const isRemoved = article.status === "Removed";
+    const isPreview = (article.status === "Draft" || article.status === "UnderReview");
+    const isPublished = article.status === "Published";
+
     return (
         <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
             <Header />
 
+            <div style={{ display: 'flex', padding: '20px 40px', gap: '20px' }} />
+
             <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 flex justify-center gap-8 overflow-hidden">
                 
-                {/* LADO IZQUIERDO: Contenedor Principal del Artículo */}
+                {/* Main content */}
                 <section className="flex-1 max-w-[900px] flex flex-col bg-white rounded-2xl border border-gray-300 shadow-sm overflow-hidden h-full">
-                    
-                    {/* CABECERA FIJA */}
+                    {isPreview && (
+                        <div className="w-full bg-blue-100 text-blue-700 py-3 px-4 font-bold text-sm text-center border-b border-blue-200">
+                            Este articulo aun no ha sido publicado. Esta es una vista previa del artículo.
+                        </div>
+                    )}
+                    {isRemoved && (
+                        <div className="w-full bg-orange-100 text-black-700 py-3 px-4 font-bold text-sm text-center border-b border-orange-200">
+                            Este artículo ha sido eliminado y ahora es de solo lectura.
+                        </div>
+                    )}
+                    {/* Header */}
                     <div className="p-6 md:p-8 border-b border-gray-200 shrink-0 bg-white z-10 flex flex-col items-center text-center">
                         <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
                             {article.title}
@@ -200,7 +233,7 @@ export const ReadArticlePage = () => {
                             <span className="flex items-center gap-1">
                                 <span className="text-gray-400">Publicado:</span> 
                                 <span className="text-gray-800">
-                                    {new Date(article.publishedAt).toLocaleDateString()}
+                                    {formatDate(article.publishedAt)}
                                 </span>
                             </span>
                             <span className="flex items-center gap-1">
@@ -209,7 +242,7 @@ export const ReadArticlePage = () => {
                         </div>
                     </div>
 
-                    {/* CUERPO SCROLLEABLE */}
+                    {/* Body */}
                     <div className="flex-1 overflow-y-auto scroll-smooth p-6 md:p-10 bg-white">
                         
                         <div className="w-full max-h-[450px] h-[450px] rounded-xl mb-10 border border-gray-200 overflow-hidden bg-gray-50 shrink-0">
@@ -225,13 +258,14 @@ export const ReadArticlePage = () => {
                             <ArticleContent content={article.content} />
                         </div>
 
-                        {/* Barra de Interacción */}
+                        {/* Interaction bar */}
                         <div className="w-full flex items-center justify-start gap-8 mt-12 pt-6 border-t border-gray-100">
                             <button 
                                 onClick={handleLikeToggle}
+                                disabled={!isPublished}
                                 className={`flex items-center gap-2 transition-colors ${
-                                    isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
-                                }`}
+                                    isPublished ? '' : 'opacity-50 cursor-not-allowed'
+                                } ${isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
                             >
                                 <svg className="w-6 h-6" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -241,7 +275,10 @@ export const ReadArticlePage = () => {
                             
                             <button 
                                 onClick={handleFocusComment}
-                                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                                disabled={!isPublished}
+                                className={`flex items-center gap-2 transition-colors ${
+                                    isPublished ? '' : 'opacity-50 cursor-not-allowed text-gray-600'
+                                }`}
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -251,7 +288,10 @@ export const ReadArticlePage = () => {
 
                             <button 
                                 onClick={() => navigator.clipboard.writeText(globalThis.location.href).then(() => alert("Enlace copiado!"))}
-                                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                                disabled={!isPublished}
+                                className={`flex items-center gap-2 transition-colors ${
+                                    isPublished ? '' : 'opacity-50 cursor-not-allowed text-gray-600'
+                                }`}
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -260,7 +300,7 @@ export const ReadArticlePage = () => {
                             </button>
                         </div>
 
-                        {/* Sección de Comentarios */}
+                        {/* Comment section */}
                         <div className="w-full mt-10 bg-gray-50/50 rounded-xl p-6 border border-gray-100">
                             <h3 className="text-xl font-bold text-gray-800 mb-6">Comentarios</h3>
                             
@@ -271,7 +311,6 @@ export const ReadArticlePage = () => {
                                     comments.map((comment) => (
                                         <div key={comment.id} className="flex gap-4 items-start justify-between w-full border-b border-gray-50 pb-4 last:border-0 last:pb-0">
                                             <div className="flex gap-4 flex-1 min-w-0">
-                                                {/* Contenedor estricto para evitar que la pfp rompa la vista */}
                                                 <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-200 bg-gray-100">
                                                     <SafeImage 
                                                         src={comment.authorPfpUri} 
@@ -283,10 +322,10 @@ export const ReadArticlePage = () => {
                                                 <div className="flex flex-col min-w-0 flex-1">
                                                     <span className="font-bold text-gray-900 text-sm">{comment.authorName}</span>
                                                     <p className="text-gray-700 mt-1 text-sm leading-relaxed break-words">{comment.content}</p>
+                                                    <span className="text-xs text-gray-500">{formatDate(comment.postedAt)}</span>
                                                 </div>
                                             </div>
 
-                                            {/* Botón de eliminación exclusivo para moderadores con confirmación nativa */}
                                             {canModerate && (
                                                 <button
                                                     onClick={async () => {
@@ -314,7 +353,7 @@ export const ReadArticlePage = () => {
 
                     </div>
 
-                    {/* PIE FIJO */}
+                    {/* Footer */}
                     <div className="p-4 md:p-6 border-t border-gray-200 bg-gray-50 shrink-0 flex items-center gap-4 z-10">
                         <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-300 bg-gray-100">
                             <SafeImage 
@@ -330,10 +369,13 @@ export const ReadArticlePage = () => {
                             value={commentInput}
                             onChange={handleCommentChange}
                             maxLength={500}
-                            placeholder="Escribe un comentario (hasta 500 caracteres)..."
-                            disabled={isSubmitting}
-                            className="flex-1 h-12 border border-gray-300 rounded-lg px-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all bg-white disabled:bg-gray-100 overflow-x-auto whitespace-nowrap scrollbar-thin"
+                            placeholder={isPublished ? "Escribe un comentario..." : "No se pueden comentar artículos no publicados o eliminados."}
+                            disabled={isSubmitting || !isPublished}
+                            className="flex-1 h-12 border border-gray-300 rounded-lg px-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all bg-white disabled:bg-gray-200 disabled:cursor-not-allowed overflow-x-auto whitespace-nowrap scrollbar-thin"
                         />
+                        <span className="text-xs text-gray-500 font-semibold shrink-0">
+                            {commentInput.length}/500
+                        </span>
                         <button 
                             onClick={handleSendComment}
                             disabled={commentInput.trim().length === 0 || isSubmitting}
@@ -372,33 +414,35 @@ export const ReadArticlePage = () => {
                         </p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-gray-300 shadow-sm flex flex-col shrink-0">
-                        <h3 className="text-xs text-center font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Artículos Destacados</h3>
-                        <div className="flex flex-col gap-5">
-                            {featuredArticles.map((related) => (
-                                <div 
-                                    key={related.id} 
-                                    onClick={() => navigate(`/articulo/${related.id}`)}
-                                    className="group cursor-pointer flex flex-col gap-2"
-                                >
-                                    <div className="w-full h-32 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shrink-0">
-                                        <SafeImage 
-                                            src={related.coverUri} 
-                                            alt={related.title} 
-                                            variant="cover" 
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                                        />
+                    {isPublished && featuredArticles.length > 0 && (
+                        <div className="bg-white p-6 rounded-2xl border border-gray-300 shadow-sm flex flex-col shrink-0">
+                            <h3 className="text-xs text-center font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Artículos Destacados</h3>
+                            <div className="flex flex-col gap-5">
+                                {featuredArticles.map((related) => (
+                                    <div 
+                                        key={related.id} 
+                                        onClick={() => navigate(`/articulos/${related.id}`)}
+                                        className="group cursor-pointer flex flex-col gap-2"
+                                    >
+                                        <div className="w-full h-32 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shrink-0">
+                                            <SafeImage 
+                                                src={related.coverUri} 
+                                                alt={related.title} 
+                                                variant="cover" 
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                            />
+                                        </div>
+                                        <h4 className="font-bold text-gray-800 text-sm group-hover:text-blue-600 transition-colors line-clamp-2">
+                                            {related.title}
+                                        </h4>
+                                        <p className="text-xs text-gray-500 line-clamp-2">
+                                            {related.summary}
+                                        </p>
                                     </div>
-                                    <h4 className="font-bold text-gray-800 text-sm group-hover:text-blue-600 transition-colors line-clamp-2">
-                                        {related.title}
-                                    </h4>
-                                    <p className="text-xs text-gray-500 line-clamp-2">
-                                        {related.summary}
-                                    </p>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </aside>
             </main>
         </div>
