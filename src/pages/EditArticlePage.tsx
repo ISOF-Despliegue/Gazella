@@ -1,5 +1,5 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { OutputData } from '@editorjs/editorjs';
 import { Editor } from '../components/Editor';
 import { Header } from '../components/Header';
@@ -9,10 +9,12 @@ import { uploadMedia } from '../services/media';
 import { getCategories } from '../services/articles/articles';
 import { getArticleAsDraft, updateDraft, publishDraft } from '../services/articles/drafts';
 import type { Category } from '../types/article';
+import { getCurrentSession } from '../services/auth';
 
 export const EditArticlePage = () => {
     const { articleId } = useParams<{ articleId: string }>();
     const localProfile = getLocalProfile();
+    const authorId = getCurrentSession()?.sub;
 
     // Estados del formulario
     const [title, setTitle] = useState('');
@@ -33,7 +35,9 @@ export const EditArticlePage = () => {
 
     // Cargar el borrador y las categorías
     useEffect(() => {
-        if (!articleId) return;
+        if (!articleId) {
+            return;
+        }
 
         const loadData = async () => {
             setIsLoading(true);
@@ -88,6 +92,10 @@ export const EditArticlePage = () => {
     };
 
     const handleSave = async (isPublishing: boolean) => {
+        if (!authorId) {
+            return;
+        }
+        
         if (!title.trim() || !content) {
             return alert('El título y el contenido son obligatorios.');
         }
@@ -105,7 +113,7 @@ export const EditArticlePage = () => {
                 summary,
                 categoryId,
                 coverUri,
-                authorId: localProfile?.id || "",
+                authorId: authorId,
                 authorName,
                 authorPfpUri: localProfile?.pfpUri || "",
                 content: JSON.stringify(content)

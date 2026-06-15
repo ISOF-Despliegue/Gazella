@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { ArticleCard } from '../components/ArticleCard';
 import { ProjectCard } from '../components/ProjectCard';
-import { type Article } from '../types/article';
+import { type FeaturedArticle } from '../types/article';
 import { type Project } from '../types/project';
 import { getCurrentSession } from '../services/auth';
 import { getFeaturedArticles } from '../services/articles/articles';
@@ -12,7 +12,7 @@ import { assets } from '../assets/assets';
 
 export function HomePage() {
     const navigate = useNavigate();
-    const [articles, setArticles] = useState<Article[]>([]);
+    const [articles, setArticles] = useState<FeaturedArticle[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [articlesStatus, setArticlesStatus] = useState('Cargando articulos...');
     const [projectsStatus, setProjectsStatus] = useState('Cargando proyectos...');

@@ -4,9 +4,33 @@ import { assets } from "../assets/assets";
 import { getMyAuthorStats } from "../services/articles/articles";
 import type { AuthorStats } from "../types/article";
 
+function dateFormat(datetime: string) {
+  const fallback = "Fecha no especificada";
+
+  const date = new Date(datetime);
+
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  try {
+    return new Intl.DateTimeFormat('es-MX', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    }).format(date);
+  } catch (error) {
+    return fallback;
+  }
+}
+
 function getRecentActivityText(stats: AuthorStats) {
     const latestComment = stats.recentActivity.latestCommentPostedAt
-        ? "Nuevo comentario hace 2 h"
+        ? `Comentario más reciente: ${dateFormat(stats.recentActivity.latestCommentPostedAt)}`
         : "Sin comentarios recientes";
 
     return [latestComment, `${stats.recentActivity.likesToday} nuevos me gusta hoy`];

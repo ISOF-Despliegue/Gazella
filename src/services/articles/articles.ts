@@ -106,32 +106,6 @@ export async function deleteMyArticle(articleId: string, myUserId: string): Prom
     });
 }
 
-const AUTHOR_STATS_STUB: AuthorStats = {
-    totalLikes: 42,
-    totalComments: 14,
-    publishedArticlesCount: 5,
-    engagementRate: 8.4,
-    topArticles: [
-        { id: "published-1", title: "La importancia de separar basura", likesCount: 24, commentsCount: 7 },
-        { id: "published-2", title: "Ecosistemas marinos y carbono", likesCount: 18, commentsCount: 3 },
-        { id: "published-3", title: "Especies en peligro en México", likesCount: 0, commentsCount: 0 },
-    ],
-    recentActivity: {
-        latestCommentId: "comment-1",
-        latestCommentArticleId: "published-1",
-        latestCommentPostedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        likesToday: 3,
-    },
-};
-
 export async function getMyAuthorStats(): Promise<AuthorStats> {
-    try {
-        return await apiRequest<AuthorStats>("/articles/my-stats");
-    } catch {
-        return {
-            ...AUTHOR_STATS_STUB,
-            topArticles: AUTHOR_STATS_STUB.topArticles.map((article) => ({ ...article })),
-            recentActivity: { ...AUTHOR_STATS_STUB.recentActivity },
-        };
-    }
+    return await apiRequest<AuthorStats>("/articles/my-stats");
 }

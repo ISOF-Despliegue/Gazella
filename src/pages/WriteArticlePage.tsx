@@ -7,6 +7,7 @@ import { uploadMedia } from '../services/media';
 import { getLocalProfile } from '../services/accounts';
 import { Header } from '../components/Header';
 import { ArticleContent } from '../components/ArticleContent';
+import { getCurrentSession } from '../services/auth';
 
 interface Category {
     id: string;
@@ -15,7 +16,7 @@ interface Category {
 
 export const WriteArticlePage = () => {
     const localProfile = getLocalProfile();
-    const authorId = localProfile?.id || "";
+    const authorId = getCurrentSession()?.sub;
     const authorName = `${localProfile?.parentalSurname} ${localProfile?.maternalSurname} ${localProfile?.name}`;
     const authorPfpUri = localProfile?.pfpUri || "";
 
@@ -62,6 +63,10 @@ export const WriteArticlePage = () => {
     };
 
     const handleSaveDraft = async () => {
+        if (!authorId) {
+            return;
+        }
+
         if (!title.trim() || !content) {
             return alert('Faltan datos requeridos (Título y Contenido)');
         }
@@ -85,6 +90,10 @@ export const WriteArticlePage = () => {
     };
 
     const handlePublish = async () => {
+        if (!authorId) {
+            return;
+        }
+
         if (!title.trim() || !content) {
             return alert('Faltan datos requeridos (Título y Contenido)');
         }
