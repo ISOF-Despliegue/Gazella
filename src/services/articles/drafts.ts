@@ -17,9 +17,32 @@ export interface ArticlesPendingReviewResult {
     pageSize: number; 
 }
 
+export interface ArticleDraft {
+    id: string;
+    title: string;
+    coverUri: string;
+    summary: string;
+    categoryId: string;
+    categoryName: string;
+    content: string;
+    status: string;
+    rejectionReason: string;
+}
+
+export async function getArticleAsDraft(articleId: string): Promise<ArticleDraft> {
+    return apiRequest<ArticleDraft>(`/articles/drafts/${articleId}`);
+}
+
 export async function submitDraft(draft: Draft) {
     return apiRequest<SubmitDraftResponse>("/articles/drafts", {
         method: "POST",
+        body: JSON.stringify(draft)
+    });
+}
+
+export async function updateDraft(draft: Draft) {
+    return apiRequest<SubmitDraftResponse>(`/articles/drafts/${draft.id}`, {
+        method: "PATCH",
         body: JSON.stringify(draft)
     });
 }

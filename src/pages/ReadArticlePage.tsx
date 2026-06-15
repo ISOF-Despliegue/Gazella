@@ -198,7 +198,7 @@ export const ReadArticlePage = () => {
     }
 
     const isRemoved = article.status === "Removed";
-    const isPreview = (article.status === "Draft" || article.status === "UnderReview");
+    const isPreview = (article.status === "Draft" || article.status === "UnderReview" || article.status === "Rejected");
     const isPublished = article.status === "Published";
 
     return (

@@ -100,6 +100,12 @@ export async function getMyArticles(): Promise<MyArticle[]> {
     return response ?? [];
 }
 
+export async function deleteMyArticle(articleId: string, myUserId: string): Promise<{ message: string }> {
+    return await apiRequest<{ message: string }>(`/articles/authors/${myUserId}/articles/${articleId}`, {
+        method: "DELETE",
+    });
+}
+
 const AUTHOR_STATS_STUB: AuthorStats = {
     totalLikes: 42,
     totalComments: 14,

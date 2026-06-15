@@ -23,6 +23,7 @@ import { AuthorStatsPage } from "../pages/AuthorStatsPage";
 import { ManagePublishedArticlesPage } from "../pages/ManagePublishedArticlesPage";
 import { trackCurrentRoute } from "../components/BackButton";
 import { MyArticlesPage } from '../pages/MyArticlesPage';
+import { EditArticlePage } from "../pages/EditArticlePage";
 
 function NavigationHistoryTracker() {
     const location = useLocation();
@@ -51,6 +52,7 @@ export function AppRouter() {
                 <Route path="/articulos" element={<ArticlesListPage />} />
                 <Route path="/nuevo-articulo" element={<WriteArticlePage />} />
                 <Route path="/articulos/:articleId" element={<ReadArticlePage />} />
+                <Route path="/articulos/editar/:articleId" element={<EditArticlePage/>} />
                 <Route path="/editor/articulos" element={<RoleGuard allowedRoles={["editor", "moderator"]}><PendingArticlesPage /></RoleGuard>} />
                 <Route path="/editor/articulos/:articleId/revision" element={<RoleGuard allowedRoles={["editor", "moderator"]}><ReviewArticlePage /></RoleGuard>} />
                 <Route path="/editor/articulos/publicados" element={<RoleGuard allowedRoles={["editor", "moderator"]}><ManagePublishedArticlesPage /></RoleGuard>} />

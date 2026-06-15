@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { getMyArticles } from "../services/articles/articles"
+import { getMyArticles, deleteMyArticle } from "../services/articles/articles"
 import { getCurrentSession } from "../services/auth";
 import type { MyArticle } from "../types/article";
 import { Header } from "../components/Header";
 import { SafeImage } from "../components/SafeImage";
-import { deletePublishedArticle } from "../services/articles/management";
 
 
 type TabFilter = "todos" | "publicados" | "enRevision" | "borradores" | "rechazados" | "eliminados"
@@ -114,15 +113,15 @@ export function MyArticlesPage() {
 
     const displayed = categorized[activeTab];
 
-    const editArticle = async (article: MyArticle) => {
-        //todo
-    }
-
     const handleDeleteArticle = async(article: MyArticle) => {
+        if (!session?.sub) {
+            return;
+        }
+        
         setIsDeleting(true);
 
         try {
-            await deletePublishedArticle(article.id);
+            await deleteMyArticle(article.id, session.sub);
             setArticles((prev) => prev.map((a) => a.id === article.id ? {...a, status: "Removed"} : a));
             setActionMessage({ text: "El articulo ha sido eliminado. Ahora es solo lectura para ti", type: "ok" });
         } catch {
@@ -220,9 +219,11 @@ export function MyArticlesPage() {
                                             Editar
                                         </button>
                                     )}
-                                    <button onClick={() => setConfirmDeleteArticle(article)} style={{ padding: "8px 16px", border: "1px solid #fecaca", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px", color: "#dc2626" }}>
-                                        Eliminar articulo
-                                    </button>
+                                    {!isRemoved && (
+                                        <button onClick={() => setConfirmDeleteArticle(article)} style={{ padding: "8px 16px", border: "1px solid #fecaca", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "13px", color: "#dc2626" }}>
+                                            Eliminar articulo
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -233,7 +234,7 @@ export function MyArticlesPage() {
             {confirmDeleteArticle && (
                 <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                     <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "12px" }}>Cancelar proyecto</h2>
+                        <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "12px" }}>Eliminar articulo</h2>
                         <p style={{ fontSize: "14px", color: "#374151", marginBottom: "12px" }}>
                             ¿Estás seguro de que deseas eliminar el articulo <strong>{confirmDeleteArticle.title}</strong>?
                         </p>
