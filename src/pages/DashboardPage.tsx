@@ -72,10 +72,11 @@ export function DashboardPage() {
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'U';
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
+
 
     const isOrganizer = session?.roles?.includes('organizer');
     const isEditor = session?.roles?.some((role) => ['editor', 'moderator'].includes(role.toLowerCase()));

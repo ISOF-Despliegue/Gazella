@@ -125,9 +125,22 @@ export function getCurrentSession(): AuthSession | null {
     };
 }
 
-export function logout() {
+export async function logout() {
     localStorage.removeItem("gazella_access_token");
     localStorage.removeItem("gazella_access_token_expires_at");
+    
+    try {
+        const idpLogoutUrl = `${globalThis.location.origin}/oidc/end_session`;
+        
+        await fetch(idpLogoutUrl, {
+            method: "GET",
+            credentials: "include",
+        }).catch(() => {
+            console.log("IdP logout completed or not available");
+        });
+    } catch (error) {
+        console.log("IdP logout attempt completed");
+    }
 }
 
 export function hasAnyRole(session: AuthSession | null, allowedRoles: string[]) {

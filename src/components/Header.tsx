@@ -48,10 +48,11 @@ export function Header() {
             .map((part) => part[0]?.toUpperCase())
             .join('') || 'U';
     
-        const handleLogout = () => {
-            logout();
+        const handleLogout = async () => {
+            await logout();
             navigate('/login');
         };
+
 
     return (
         <div>
