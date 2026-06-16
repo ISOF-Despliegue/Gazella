@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArticleContent } from '../components/ArticleContent';
 import { Header } from '../components/Header';
-import { getLocalProfile, getProfileById, type PublicAccountProfile } from '../services/accounts';
+import { followAccount, getFollowersFor, getLocalProfile, getProfileById, type PublicAccountProfile, unfollowAccount } from '../services/accounts';
 import { getCurrentSession } from '../services/auth';
 import { getArticle, getFeaturedArticles } from '../services/articles/articles';
 import { 
@@ -40,6 +40,8 @@ export const ReadArticlePage = () => {
     const [featuredArticles, setFeaturedArticles] = useState<FeaturedArticle[]>([]);
     
     const [authorProfile, setAuthorProfile] = useState<PublicAccountProfile | null>(null);
+    const [followerCount, setFollowerCount] = useState(0);
+    const [isFollowingAuthor, setIsFollowingAuthor] = useState(false);
 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -75,6 +77,18 @@ export const ReadArticlePage = () => {
                 setArticle(fetchedArticle);
                 setFeaturedArticles(fetchedFeatured);
                 setAuthorProfile(fetchedProfile);
+
+                if (fetchedProfile?.id) {
+                    const followers = await getFollowersFor(fetchedProfile.id).catch((err) => {
+                        console.error('Error al obtener seguidores del autor:', err);
+                        return [] as Array<{ follower: PublicAccountProfile }>;
+                    });
+
+                    setFollowerCount(followers.length);
+                    setIsFollowingAuthor(
+                        !!followers.find((entry) => entry.follower.id === session?.sub),
+                    );
+                }
 
                 setLikesCount(fetchedArticle.likesCount);
                 setCommentsCount(fetchedArticle.commentsCount);
@@ -117,6 +131,31 @@ export const ReadArticlePage = () => {
             setIsLiked(previouslyLiked);
             setLikesCount(prev => previouslyLiked ? prev + 1 : prev - 1);
             console.error("Failed to like article:", error);
+        }
+    };
+
+    const handleFollowToggle = async () => {
+        if (!session || !authorProfile?.id) {
+            return alert('Debes iniciar sesión para seguir o dejar de seguir al autor.');
+        }
+
+        const targetAccountId = authorProfile.id;
+        const currentlyFollowing = isFollowingAuthor;
+
+        setIsFollowingAuthor(!currentlyFollowing);
+        setFollowerCount((count) => currentlyFollowing ? count - 1 : count + 1);
+
+        try {
+            if (currentlyFollowing) {
+                await unfollowAccount(targetAccountId);
+            } else {
+                await followAccount(targetAccountId);
+            }
+        } catch (err) {
+            setIsFollowingAuthor(currentlyFollowing);
+            setFollowerCount((count) => currentlyFollowing ? count + 1 : count - 1);
+            console.error('Error al actualizar seguimiento:', err);
+            alert('No se pudo actualizar el seguimiento. Intenta de nuevo.');
         }
     };
 
@@ -412,6 +451,19 @@ export const ReadArticlePage = () => {
                         <p className="text-gray-500 text-sm mt-3 leading-relaxed line-clamp-4">
                             {authorProfile?.bio ?? "Autor contribuyente en la plataforma Gazella."}
                         </p>
+
+                        <div className="mt-6 flex flex-col gap-3 w-full">
+                            <button
+                                type="button"
+                                onClick={handleFollowToggle}
+                                className={`w-full h-11 rounded-full font-semibold transition-colors ${isFollowingAuthor ? 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                            >
+                                {isFollowingAuthor ? 'Siguiendo' : 'Seguir'}
+                            </button>
+                            <div className="text-sm text-gray-500">
+                                {followerCount} {followerCount === 1 ? 'seguidor' : 'seguidores'}
+                            </div>
+                        </div>
                     </div>
 
                     {isPublished && featuredArticles.length > 0 && (

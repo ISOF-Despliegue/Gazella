@@ -161,6 +161,22 @@ export async function requestVerificationEmail(email: string) {
     });
 }
 
+export async function requestRecoveryEmail(email: string) {
+    return apiRequest<{ message: string }>("/api/auth/recovery", {
+        method: "POST",
+        skipAuth: true,
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function completeAccountRecovery(email: string, code: string, password: string) {
+    return apiRequest<{ message: string }>("/api/auth/recovery", {
+        method: "PATCH",
+        skipAuth: true,
+        body: JSON.stringify({ email, code, password }),
+    });
+}
+
 async function resolveIdpFlow(response: any): Promise<string> {
     if (response.customRedirectUrl) {
         return response.customRedirectUrl;

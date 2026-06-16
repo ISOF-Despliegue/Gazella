@@ -134,6 +134,7 @@ export function LoginPage() {
                         Registrarme
                     </button>
                     <button
+                        onClick={() => navigate('/recuperar')}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', color: '#374151' }}
                     >
                         Olvidé mi contraseña

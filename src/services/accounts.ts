@@ -55,6 +55,23 @@ export async function updateMyAccount(input: UpdateAccountInput) {
     });
 }
 
+export async function followAccount(targetId: string) {
+    return apiRequest<{ message: string }>("/socials", {
+        method: "POST",
+        body: JSON.stringify({ targetId }),
+    });
+}
+
+export async function unfollowAccount(targetId: string) {
+    return apiRequest<{ message: string }>(`/socials/${targetId}`, {
+        method: "DELETE",
+    });
+}
+
+export async function getFollowersFor(accountId: string) {
+    return apiRequest<Array<{ follower: PublicAccountProfile }>>(`/socials/followers/${accountId}`);
+}
+
 export function saveLocalProfile(profile: EditableAccountProfile) {
     localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(profile));
 }

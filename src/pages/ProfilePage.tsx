@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLocalProfile, getMyAccount, saveLocalProfile, type EditableAccountProfile } from '../services/accounts';
+import { getLocalProfile, getMyAccount, getFollowersFor, saveLocalProfile, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, type AuthSession } from '../services/auth';
 import { BackButton } from '../components/BackButton';
 import { SafeImage } from '../components/SafeImage';
@@ -31,6 +31,7 @@ export function ProfilePage() {
     const navigate = useNavigate();
     const [session, setSession] = useState<AuthSession | null>(null);
     const [profile, setProfile] = useState<EditableAccountProfile | null>(null);
+    const [followersCount, setFollowersCount] = useState(0);
 
     useEffect(() => {
         const currentSession = getCurrentSession();
@@ -46,6 +47,16 @@ export function ProfilePage() {
             .then((account) => {
                 setProfile(account);
                 saveLocalProfile(account);
+                return account.id;
+            })
+            .then((accountId) => {
+                if (!accountId) return;
+                return getFollowersFor(accountId);
+            })
+            .then((followers) => {
+                if (followers && Array.isArray(followers)) {
+                    setFollowersCount(followers.length);
+                }
             })
             .catch(() => undefined);
     }, [navigate]);
@@ -144,7 +155,7 @@ export function ProfilePage() {
                             <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0' }}>Proyectos participados</p>
                         </div>
                         <div>
-                            <strong style={{ fontSize: '22px' }}>0</strong>
+                            <strong style={{ fontSize: '22px' }}>{followersCount}</strong>
                             <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0' }}>Seguidores</p>
                         </div>
                     </div>

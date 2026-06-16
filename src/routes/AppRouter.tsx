@@ -4,6 +4,7 @@ import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { VerifyCodePage } from "../pages/VerifyCodePage";
+import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { ArticlesListPage } from "../pages/ArticlesListPage";
 import { AuthCallbackPage } from "../pages/AuthCallbackPage";
@@ -42,6 +43,7 @@ export function AppRouter() {
             <Routes>
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/recuperar" element={<ForgotPasswordPage />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/registro" element={<RegisterPage />} />
                 <Route path="/verificar" element={<VerifyCodePage />} />

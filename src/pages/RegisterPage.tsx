@@ -54,7 +54,7 @@ export function RegisterPage() {
                 joinedAt: new Date().toISOString(),
             });
 
-            navigate('/verificar', { state: { email: trimmedEmail } });
+            navigate('/verificar', { state: { email: trimmedEmail, mode: 'verification' as const } });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'No se pudo completar el registro.';
             setError(message);

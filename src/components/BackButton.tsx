@@ -2,8 +2,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentSession } from '../services/auth';
 
 const PUBLIC_PATHS = ['/', '/login', '/registro', '/verificar', '/auth/callback', '/home'];
-const CURRENT_ROUTE_KEY = 'gazella.currentRoute';
-const PREVIOUS_ROUTE_KEY = 'gazella.previousRoute';
+const ROUTE_STACK_KEY = 'gazella.routeStack';
+const MAX_STACK_SIZE = 50;
 
 type BackButtonProps = {
     fallbackPath?: string;
@@ -15,18 +15,34 @@ function isPublicPath(path: string) {
     return PUBLIC_PATHS.some((publicPath) => path === publicPath || path.startsWith(`${publicPath}?`));
 }
 
-function getTrackedPreviousRoute(currentRoute: string) {
+function getRouteStack() {
     if (typeof window === 'undefined') {
-        return null;
+        return [] as string[];
     }
 
-    const previousRoute = window.sessionStorage.getItem(PREVIOUS_ROUTE_KEY);
-
-    if (!previousRoute || previousRoute === currentRoute) {
-        return null;
+    const raw = window.sessionStorage.getItem(ROUTE_STACK_KEY);
+    if (!raw) {
+        return [] as string[];
     }
 
-    return previousRoute;
+    try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+            return parsed.filter((route) => typeof route === 'string');
+        }
+    } catch {
+        // ignore invalid stack data
+    }
+
+    return [] as string[];
+}
+
+function setRouteStack(stack: string[]) {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.sessionStorage.setItem(ROUTE_STACK_KEY, JSON.stringify(stack));
 }
 
 export function BackButton({ fallbackPath = '/dashboard', label = 'Regresar', preferFallback = false }: BackButtonProps) {
@@ -35,18 +51,31 @@ export function BackButton({ fallbackPath = '/dashboard', label = 'Regresar', pr
 
     const handleBack = () => {
         const session = getCurrentSession();
-        const currentRoute = `${location.pathname}${location.search}${location.hash}`;
-        const previousRoute = getTrackedPreviousRoute(currentRoute);
         const safeFallback = session && isPublicPath(fallbackPath)
             ? '/dashboard'
             : fallbackPath;
 
-        if (!preferFallback && previousRoute && !(session && isPublicPath(previousRoute))) {
-            navigate(previousRoute);
+        if (preferFallback) {
+            navigate(safeFallback);
             return;
         }
 
-        navigate(safeFallback);
+        const routeStack = getRouteStack();
+        if (routeStack.length <= 1) {
+            navigate(safeFallback);
+            return;
+        }
+
+        // Pop current route and use the previous page in the stack.
+        routeStack.pop();
+        const previousRoute = routeStack.pop();
+        if (!previousRoute || (session && isPublicPath(previousRoute))) {
+            navigate(safeFallback);
+            return;
+        }
+
+        setRouteStack(routeStack);
+        navigate(previousRoute);
     };
 
     return (
@@ -80,11 +109,13 @@ export function trackCurrentRoute(path: string) {
         return;
     }
 
-    const currentRoute = window.sessionStorage.getItem(CURRENT_ROUTE_KEY);
-
-    if (currentRoute && currentRoute !== path) {
-        window.sessionStorage.setItem(PREVIOUS_ROUTE_KEY, currentRoute);
+    const routeStack = getRouteStack();
+    const currentRoute = routeStack[routeStack.length - 1];
+    if (currentRoute !== path) {
+        routeStack.push(path);
+        if (routeStack.length > MAX_STACK_SIZE) {
+            routeStack.splice(0, routeStack.length - MAX_STACK_SIZE);
+        }
+        setRouteStack(routeStack);
     }
-
-    window.sessionStorage.setItem(CURRENT_ROUTE_KEY, path);
 }
