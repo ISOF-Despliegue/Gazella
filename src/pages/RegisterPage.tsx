@@ -34,7 +34,7 @@ export function RegisterPage() {
             const trimmedParentalSurname = apellidoPaterno.trim();
             const trimmedMaternalSurname = apellidoMaterno.trim();
 
-            await register({
+            const response = await register({
                 email: trimmedEmail,
                 password,
                 name: trimmedName,
@@ -42,6 +42,22 @@ export function RegisterPage() {
                 maternalSurname: trimmedMaternalSurname || undefined,
                 role: allowEditorRegistration ? role : undefined,
             });
+
+            // Check if the user was already registered but not verified
+            if (response.code === 'ALREADY_REGISTERED_NOT_VERIFIED') {
+                saveLocalProfile({
+                    email: trimmedEmail,
+                    name: trimmedName,
+                    parentalSurname: trimmedParentalSurname || null,
+                    maternalSurname: trimmedMaternalSurname || null,
+                    bio: null,
+                    pfpUri: null,
+                    role,
+                    joinedAt: new Date().toISOString(),
+                });
+                navigate('/verificar', { state: { email: trimmedEmail, mode: 'verification' as const } });
+                return;
+            }
 
             saveLocalProfile({
                 email: trimmedEmail,
