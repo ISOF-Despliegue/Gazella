@@ -32,6 +32,13 @@ export async function deleteComment(articleId: string, commentId: string): Promi
     return response;
 }
 
+export async function deleteOwnComment(articleId: string, commentId: string, authorId: string): Promise<DeleteCommentResponse> {
+    const response = await apiRequest<DeleteCommentResponse>(`/articles/interactions/${articleId}/authors/${authorId}/comments/${commentId}`, {
+        method: "DELETE",
+    });
+    return response;
+}
+
 export async function getOlderComments(articleId: string, pageIndex: number): Promise<GetOlderCommentsResult> {
     const searchParams = new URLSearchParams();
 

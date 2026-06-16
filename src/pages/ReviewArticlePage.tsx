@@ -8,11 +8,15 @@ import { approveArticle, rejectArticle } from "../services/articles/drafts";
 import type { Article } from "../types/article";
 
 function formatDate(value: string) {
-    return new Intl.DateTimeFormat("es-MX", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-    }).format(new Date(value));
+    try {
+        return new Intl.DateTimeFormat("es-MX", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        }).format(new Date(value));
+    } catch {
+        return "-";
+    }
 }
 
 export function ReviewArticlePage() {

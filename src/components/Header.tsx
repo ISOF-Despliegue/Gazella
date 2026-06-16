@@ -23,15 +23,14 @@ export function Header() {
     
         useEffect(() => {
             const currentSession = getCurrentSession();
-    
+
             if (!currentSession) {
-                navigate('/login');
                 return;
             }
-    
+
             setSession(currentSession);
             setProfile(getLocalProfile(currentSession.email));
-    
+
             getMyAccount()
                 .then((account) => {
                     setProfile(account);
@@ -80,59 +79,66 @@ export function Header() {
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '50%',
-                        backgroundColor: '#e5e7eb',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        color: '#374151',
-                        overflow: 'hidden',
-                    }}>
-                        {profile?.pfpUri ? (
-                            <SafeImage
-                                src={profile.pfpUri}
-                                alt={displayName}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                variant="avatar"
-                            />
-                        ) : initials}
+                {session ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '32px', height: '32px', backgroundColor: '#e5e7eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            {profile?.pfpUri ? (
+                                <SafeImage
+                                    src={profile.pfpUri}
+                                    alt="avatar"
+                                />
+                            ) : initials}
+                        </div>
+                        <button
+                            onClick={() => navigate('/perfil')}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                lineHeight: 1.2,
+                                minWidth: '120px',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 0,
+                                textAlign: 'left',
+                            }}
+                        >
+                            <span style={{ fontWeight: '600', fontSize: '15px' }}>{displayName}</span>
+                            <span style={{ fontSize: '12px', color: '#6b7280' }}>{roleLabel}</span>
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            style={{
+                                backgroundColor: 'white',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                padding: '8px 12px',
+                                fontSize: '13px',
+                            }}
+                        >
+                            Salir
+                        </button>
                     </div>
-                    <button
-                        onClick={() => navigate('/perfil')}
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            lineHeight: 1.2,
-                            minWidth: '120px',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0,
-                            textAlign: 'left',
-                        }}
-                    >
-                        <span style={{ fontWeight: '600', fontSize: '15px' }}>{displayName}</span>
-                        <span style={{ fontSize: '12px', color: '#6b7280' }}>{roleLabel}</span>
-                    </button>
-                    <button
-                        onClick={handleLogout}
-                        style={{
-                            backgroundColor: 'white',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            padding: '8px 12px',
-                            fontSize: '13px',
-                        }}
-                    >
-                        Salir
-                    </button>
-                </div>
+                ) : (
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button
+                            onClick={() => navigate('/login')}
+                            style={{
+                                backgroundColor: '#2563eb',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                padding: '8px 16px',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                            }}
+                        >
+                            Iniciar Sesión
+                        </button>
+                    </div>
+                )}
             </nav>
         </div>
     );

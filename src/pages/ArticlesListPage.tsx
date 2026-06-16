@@ -23,23 +23,27 @@ const YEARS = ['2023', '2024', '2025', '2026'];
 export function ArticlesListPage() {
     const navigate = useNavigate();
     
-    const [titleInput, setTitleInput] = useState<string>('');
-    const [searchTitle, setSearchTitle] = useState<string>(''); // For API
+    const [titleInput, setTitleInput] = useState<string>(() => sessionStorage.getItem('searchTitle') || '');
+    const [searchTitle, setSearchTitle] = useState<string>(() => sessionStorage.getItem('searchTitle') || '');
     const [categories, setCategories] = useState<Category[]>([]);
-    const [selectedCategoryName, setSelectedCategoryName] = useState<string>(''); 
-    const [selectedOrderKey, setSelectedOrderKey] = useState<string>('published_at');
-    const [authorInput, setAuthorInput] = useState<string>('');
-    const [authorSearch, setAuthorSearch] = useState<string>(''); // For API
-    const [selectedMonth, setSelectedMonth] = useState('Sep');
-    const [selectedYear, setSelectedYear] = useState('2025');
-    const [publishedAfter, setPublishedAfter] = useState<string>('');
+    const [selectedCategoryName, setSelectedCategoryName] = useState<string>(() => sessionStorage.getItem('category') || ''); 
+    const [selectedOrderKey, setSelectedOrderKey] = useState<string>(() => sessionStorage.getItem('orderKey') || 'published_at');
+    const [authorInput, setAuthorInput] = useState<string>(() => sessionStorage.getItem('authorSearch') || '');
+    const [authorSearch, setAuthorSearch] = useState<string>(() => sessionStorage.getItem('authorSearch') || '');
+    const [selectedMonth, setSelectedMonth] = useState(() => sessionStorage.getItem('month') || 'Sep');
+    const [selectedYear, setSelectedYear] = useState(() => sessionStorage.getItem('year') || '2025');
     
     const [articles, setArticles] = useState<ArticleSearchEntry[]>([]);
     const [pageSize, setPageSize] = useState<number>(10);
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [currentPage, setCurrentPage] = useState<number>(() => Number(sessionStorage.getItem('currentPage')) || 1);
     const [pageCount, setPageCount] = useState<number>(1);
     const [totalEntries, setTotalEntries] = useState<number>(0);
     const [pageInputValue, setPageInputValue] = useState<string>("1");
+
+    const monthIndex = MONTHS.indexOf(selectedMonth);
+    const publishedAfter = monthIndex !== -1 && selectedYear 
+        ? new Date(Date.UTC(Number.parseInt(selectedYear), monthIndex, 1, 0, 0, 0)).toISOString()
+        : '';
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -48,15 +52,6 @@ export function ArticlesListPage() {
         };
         fetchCategories();
     }, []);
-
-    useEffect(() => {
-        const monthIndex = MONTHS.indexOf(selectedMonth);
-        if (monthIndex !== -1 && selectedYear) {
-            // Parameters are (year, month_index, day, hours, minutes, seconds)
-            const date = new Date(Date.UTC(Number.parseInt(selectedYear), monthIndex, 1, 0, 0, 0));
-            setPublishedAfter(date.toISOString());
-        }
-    }, [selectedMonth, selectedYear]);
 
     useEffect(() => {
         setPageInputValue(currentPage.toString());
@@ -89,7 +84,29 @@ export function ArticlesListPage() {
 
         fetchArticlesData();
 
-    }, [currentPage, pageSize, selectedCategoryName, authorSearch, publishedAfter, selectedOrderKey, searchTitle]);
+    }, [currentPage, pageSize, selectedCategoryName, authorSearch, selectedMonth, selectedYear, selectedOrderKey, searchTitle]);
+
+    useEffect(() => {
+        sessionStorage.setItem('searchTitle', searchTitle);
+        sessionStorage.setItem('category', selectedCategoryName);
+        sessionStorage.setItem('orderKey', selectedOrderKey);
+        sessionStorage.setItem('authorSearch', authorSearch);
+        sessionStorage.setItem('month', selectedMonth);
+        sessionStorage.setItem('year', selectedYear);
+        sessionStorage.setItem('currentPage', currentPage.toString());
+    }, [searchTitle, selectedCategoryName, selectedOrderKey, authorSearch, selectedMonth, selectedYear, currentPage]);
+
+    const handleClearFilters = () => {
+        setTitleInput('');
+        setSearchTitle('');
+        setSelectedCategoryName('');
+        setAuthorInput('');
+        setAuthorSearch('');
+        setSelectedOrderKey('published_at');
+        setSelectedMonth('Sep');
+        setSelectedYear('2025');
+        setCurrentPage(1);
+    };
 
     const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
@@ -146,7 +163,15 @@ export function ArticlesListPage() {
                     gap: '20px',
                     height: 'fit-content',
                 }}>
-                    <h3 style={{ fontWeight: 'bold', fontSize: '16px' }}>Filtros:</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ fontWeight: 'bold', fontSize: '16px', margin: 0 }}>Filtros:</h3>
+                        <button 
+                            onClick={handleClearFilters}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                        >
+                            Limpiar filtros
+                        </button>
+                    </div>
 
                     {/* Category */}
                     <div>
@@ -308,7 +333,11 @@ export function ArticlesListPage() {
 
                     {/* Article entries mapping */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflowY: 'auto', paddingRight: '8px', marginBottom: '16px' }}>
-                        {(articles ?? []).map((article) => (
+                        {articles.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                                No se encontraron artículos con los criterios seleccionados.
+                            </div>
+                        ) : articles.map((article) => (
                             <div
                                 key={article.id}
                                 role="button"

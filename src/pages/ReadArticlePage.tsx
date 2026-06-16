@@ -56,7 +56,9 @@ export const ReadArticlePage = () => {
     const commentInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (!articleId) return;
+        if (!articleId) {
+            return;
+        }
 
         const loadArticleData = async () => {
             setIsLoading(true);
@@ -66,7 +68,7 @@ export const ReadArticlePage = () => {
 
                 const [fetchedFeatured, userLiked] = await Promise.all([
                     fetchedArticle.status === "Published" ? getFeaturedArticles(3) : Promise.resolve([]),
-                    checkIfExistingLike(articleId).catch(() => false)
+                    session != null ? checkIfExistingLike(articleId).catch(() => false) : false
                 ]);
 
                 const fetchedProfile = await getProfileById(fetchedArticle.authorId).catch((err) => {
@@ -393,44 +395,51 @@ export const ReadArticlePage = () => {
                     </div>
 
                     {/* Footer */}
-                    <div className="p-4 md:p-6 border-t border-gray-200 bg-gray-50 shrink-0 flex items-center gap-4 z-10">
-                        <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-300 bg-gray-100">
-                            <SafeImage 
-                                src={currentUserPfp} 
-                                alt="Mi perfil" 
-                                variant="avatar" 
-                                className="w-full h-full object-cover" 
+                    {session ? (
+                        <div className="p-4 md:p-6 border-t border-gray-200 bg-gray-50 shrink-0 flex items-center gap-4 z-10">
+                            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-300 bg-gray-100">
+                                <SafeImage 
+                                    src={currentUserPfp} 
+                                    alt="Mi perfil" 
+                                    variant="avatar" 
+                                    className="w-full h-full object-cover" 
+                                />
+                            </div>
+                            <input
+                                ref={commentInputRef}
+                                type="text"
+                                value={commentInput}
+                                onChange={handleCommentChange}
+                                maxLength={500}
+                                placeholder={isPublished ? "Escribe un comentario..." : "No se pueden comentar artículos no publicados o eliminados."}
+                                disabled={isSubmitting || !isPublished}
+                                className="flex-1 h-12 border border-gray-300 rounded-lg px-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all bg-white disabled:bg-gray-200 disabled:cursor-not-allowed overflow-x-auto whitespace-nowrap scrollbar-thin"
                             />
+                            <span className="text-xs text-gray-500 font-semibold shrink-0">
+                                {commentInput.length}/500
+                            </span>
+                            <button 
+                                onClick={handleSendComment}
+                                disabled={commentInput.trim().length === 0 || isSubmitting}
+                                className={`h-12 px-6 font-bold rounded-full text-sm transition-colors shadow-sm shrink-0 ${
+                                    commentInput.trim().length > 0 && !isSubmitting
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                                    : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+                                }`}
+                            >
+                                {isSubmitting ? 'Enviando...' : 'Enviar'}
+                            </button>
                         </div>
-                        <input
-                            ref={commentInputRef}
-                            type="text"
-                            value={commentInput}
-                            onChange={handleCommentChange}
-                            maxLength={500}
-                            placeholder={isPublished ? "Escribe un comentario..." : "No se pueden comentar artículos no publicados o eliminados."}
-                            disabled={isSubmitting || !isPublished}
-                            className="flex-1 h-12 border border-gray-300 rounded-lg px-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all bg-white disabled:bg-gray-200 disabled:cursor-not-allowed overflow-x-auto whitespace-nowrap scrollbar-thin"
-                        />
-                        <span className="text-xs text-gray-500 font-semibold shrink-0">
-                            {commentInput.length}/500
-                        </span>
-                        <button 
-                            onClick={handleSendComment}
-                            disabled={commentInput.trim().length === 0 || isSubmitting}
-                            className={`h-12 px-6 font-bold rounded-full text-sm transition-colors shadow-sm shrink-0 ${
-                                commentInput.trim().length > 0 && !isSubmitting
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                                : 'bg-gray-300 text-gray-400 cursor-not-allowed'
-                            }`}
-                        >
-                            {isSubmitting ? 'Enviando...' : 'Enviar'}
-                        </button>
-                    </div>
-
+                    ) : (
+                        <div className="p-4 md:p-6 border-t border-gray-200 bg-gray-50 w-full flex items-center justify-center z-10">
+                            <div style={{ width: '100%', padding: '16px', backgroundColor: '#f3f4f6', borderRadius: '8px', textAlign: 'center', fontSize: '14px', color: '#6b7280', border: '1px solid #e5e7eb' }}>
+                                Debes <span style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '600', textDecoration: 'underline' }} onClick={() => navigate('/login')}>iniciar sesión</span> para publicar un comentario o interactuar con el artículo.
+                            </div>
+                        </div> 
+                    )}
                 </section>
 
-                {/* LADO DERECHO: Barra Lateral */}
+                {/* Lateral bar */}
                 <aside className="w-[320px] hidden lg:flex flex-col gap-6 overflow-y-auto h-full pb-4 shrink-0">
                     
                     <div className="bg-white p-6 rounded-2xl border border-gray-300 shadow-sm flex flex-col items-center text-center shrink-0">

@@ -5,11 +5,16 @@ import type { PublishedArticle } from "../types/article";
 import { Header } from "../components/Header";
 
 function formatDate(value: string) {
-    return new Intl.DateTimeFormat("es-MX", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(new Date(value));
+    const fallback = "-";
+    try {
+        return new Intl.DateTimeFormat("es-MX", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        }).format(new Date(value));
+    } catch {
+        return fallback;
+    }
 }
 
 function getStatusLabel(status: PublishedArticle["status"]) {
