@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { createProject, updateProject, getProjectById } from "../services/projects";
 import { type CreateProjectInput } from "../types/project";
 import { Header } from "../components/Header";
-import { getCurrentSession } from "../services/auth";
+import { getCurrentSession, type AuthSession } from "../services/auth";
 
 const CATEGORIES = [
     { label: "Medio Ambiente", value: "550e8400-e29b-41d4-a716-446655440000" },
@@ -28,7 +28,6 @@ const EMPTY_FORM: Omit<CreateProjectInput, "isDraft"> = {
 export function CreateProjectPage() {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId?: string }>();
-    const session = getCurrentSession();
     const isEditing = Boolean(projectId);
 
     const [form, setForm] = useState(EMPTY_FORM);
@@ -39,9 +38,12 @@ export function CreateProjectPage() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [session, setSession] = useState<AuthSession | null>(null);
 
     useEffect(() => {
+        const session = getCurrentSession();
         if (!session) { navigate("/login"); return; }
+        setSession(session);
         const isOrganizer = session.roles?.includes("organizer");
         if (!isOrganizer) { navigate("/dashboard"); return; }
 

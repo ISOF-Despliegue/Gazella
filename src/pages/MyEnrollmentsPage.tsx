@@ -16,7 +16,6 @@ function formatDate(value?: string): string {
 
 export function MyEnrollmentsPage() {
     const navigate = useNavigate();
-    const session = getCurrentSession();
 
     const [enrollments, setEnrollments] = useState<EnrollmentApiEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +26,7 @@ export function MyEnrollmentsPage() {
     const [actionMessage, setActionMessage] = useState<string | null>(null);
 
     useEffect(() => {
+        const session = getCurrentSession();
         if (!session) { navigate("/login"); return; }
         setIsLoading(true);
         getMyEnrollments()

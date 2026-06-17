@@ -199,6 +199,9 @@ export function DashboardPage() {
                         isOrganizer
                             ? { label: 'Mis proyectos', path: '/mis-proyectos' }
                             : { label: 'Mis proyectos', path: '/mis-inscripciones' },
+                        ...(isOrganizer ? [
+                            { label: 'Estadísticas de proyectos', path: '/mis-proyectos/estadisticas' },
+                        ] : []),
                         ...(isEditor ? [
                             { label: 'Pendientes de revision', path: '/editor/articulos' },
                             { label: 'Gestionar publicados', path: '/editor/articulos/publicados' },
