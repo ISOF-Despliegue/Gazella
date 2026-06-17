@@ -44,6 +44,7 @@ export interface EnrollmentApiEntry {
     project_status: string;
     enrollment_status: "Confirmed" | "Cancelled" | string;
     enrolled_at: string;
+    cover_uri?: string;
 }
 
 export interface CreateProjectInput {
