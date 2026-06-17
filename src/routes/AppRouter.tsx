@@ -25,6 +25,7 @@ import { ManagePublishedArticlesPage } from "../pages/ManagePublishedArticlesPag
 import { trackCurrentRoute } from "../components/BackButton";
 import { MyArticlesPage } from '../pages/MyArticlesPage';
 import { EditArticlePage } from "../pages/EditArticlePage";
+import { ProjectStatsPage } from "../pages/ProjectStatsPage";
 
 function NavigationHistoryTracker() {
     const location = useLocation();
@@ -66,6 +67,7 @@ export function AppRouter() {
                 <Route path="/mis-proyectos" element={<MyProjectsPage />} />
                 <Route path="/mis-proyectos/crear" element={<CreateProjectPage />} />
                 <Route path="/mis-proyectos/editar/:projectId" element={<CreateProjectPage />} />
+                <Route path="/mis-proyectos/estadisticas" element={<ProjectStatsPage />} />
             </Routes>
         </BrowserRouter>
     );
