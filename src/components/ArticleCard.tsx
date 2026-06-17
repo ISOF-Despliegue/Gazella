@@ -40,7 +40,18 @@ export function ArticleCard({ article }: Readonly<ArticleCardProps>) {
             <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}>{article.title}</h3>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>Descripción: {article.summary}</p>
-                <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>Autor: {article.authorName}</p>
+                <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>
+                    Autor:{' '}
+                    <span
+                        style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '600' }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/perfil/${article.authorId}`);
+                        }}
+                    >
+                        {article.authorName}
+                    </span>
+                </p>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>Resumen: {article.summary}</p>
             </div>
         </div>

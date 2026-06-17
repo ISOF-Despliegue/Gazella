@@ -269,7 +269,17 @@ export const ReadArticlePage = () => {
                         </h1>
                         <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium text-gray-500">
                             <span className="flex items-center gap-1">
-                                <span className="text-gray-400">Autor:</span> <span className="text-gray-800">{article.authorName}</span>
+                                <span className="text-gray-400">Autor:</span>{' '}
+                                <span 
+                                    className="text-gray-800 hover:text-blue-600 cursor-pointer font-semibold"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const authorId = authorProfile?.id || article.authorId;
+                                        if (authorId) navigate(`/perfil/${authorId}`);
+                                    }}
+                                >
+                                    {article.authorName}
+                                </span>
                             </span>
                             <span className="flex items-center gap-1">
                                 <span className="text-gray-400">Publicado:</span> 
@@ -361,7 +371,12 @@ export const ReadArticlePage = () => {
                                                     />
                                                 </div>
                                                 <div className="flex flex-col min-w-0 flex-1">
-                                                    <span className="font-bold text-gray-900 text-sm">{comment.authorName}</span>
+                                                    <span 
+                                                        className="font-bold text-gray-900 text-sm hover:text-blue-600 cursor-pointer"
+                                                        onClick={() => comment.authorId && comment.authorId !== "me" ? navigate(`/perfil/${comment.authorId}`) : undefined}
+                                                    >
+                                                        {comment.authorName}
+                                                    </span>
                                                     <p className="text-gray-700 mt-1 text-sm leading-relaxed break-words">{comment.content}</p>
                                                     <span className="text-xs text-gray-500">{formatDate(comment.postedAt)}</span>
                                                 </div>
@@ -454,7 +469,13 @@ export const ReadArticlePage = () => {
                             />
                         </div>
                         
-                        <h4 className="font-extrabold text-gray-900 text-lg">
+                        <h4 
+                            className="font-extrabold text-gray-900 text-lg hover:text-blue-600 cursor-pointer"
+                            onClick={() => {
+                                const authorId = authorProfile?.id || article.authorId;
+                                if (authorId) navigate(`/perfil/${authorId}`);
+                            }}
+                        >
                             {authorProfile ? `${authorProfile.name} ${authorProfile.parentalSurname ?? ''}`.trim() : article.authorName}
                         </h4>
                         <p className="text-gray-500 text-sm mt-3 leading-relaxed line-clamp-4">
