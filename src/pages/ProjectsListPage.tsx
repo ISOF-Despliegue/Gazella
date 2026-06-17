@@ -4,13 +4,16 @@ import { getProjects } from "../services/projects";
 import { type Project } from "../types/project";
 import { ProjectCard } from "../components/ProjectCard";
 import { Header } from "../components/Header";
+import { enrollInProject, getMyEnrollments } from "../services/projects";
+import { getCurrentSession } from "../services/auth";
 
 const CATEGORIES = [
     { label: "Todos", value: "" },
-    { label: "Biodiversidad", value: "biodiversidad" },
-    { label: "Flora y Fauna", value: "flora-y-fauna" },
-    { label: "Residuos", value: "residuos" },
-    { label: "Acción Climática", value: "accion-climatica" },
+    { label: "Medio Ambiente", value: "Medio Ambiente" },
+    { label: "Biodiversidad", value: "Biodiversidad" },
+    { label: "Flora y Fauna", value: "Flora y fauna" },
+    { label: "Residuos", value: "Residuos" },
+    { label: "Acción Climática", value: "Accion climatica" },
 ];
 
 const ORDER_OPTIONS = [
@@ -30,6 +33,10 @@ export function ProjectsListPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageCount, setPageCount] = useState(1);
     const [totalProjects, setTotalProjects] = useState(0);
+    const [enrollProject, setEnrollProject] = useState<Project | null>(null);
+    const [isEnrolling, setIsEnrolling] = useState(false);
+    const [enrollMessage, setEnrollMessage] = useState<string | null>(null);
+    const [myEnrollmentIds, setMyEnrollmentIds] = useState<string[]>([]);
 
     const fetchProjects = useCallback(async () => {
         setIsLoading(true);
@@ -54,12 +61,57 @@ export function ProjectsListPage() {
 
     useEffect(() => {
         fetchProjects();
+        if (getCurrentSession()) {
+            getMyEnrollments().then((enrollments) =>
+                setMyEnrollmentIds(enrollments.map((e) => e.project_id))
+            ).catch(() => undefined);
+        }
     }, [fetchProjects]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setCurrentPage(1);
         fetchProjects();
+    };
+
+    const handleEnroll = async () => {
+        if (!getCurrentSession()) { navigate("/login"); return; }
+        if (!enrollProject) return;
+
+        if (enrollProject.volunteersEnrolled >= enrollProject.volunteersMax) {
+            setEnrollProject(null);
+            setEnrollMessage("Lo sentimos, este proyecto ya no tiene lugares disponibles.");
+            setTimeout(() => setEnrollMessage(null), 3000);
+            return;
+        }
+
+        if (myEnrollmentIds.includes(enrollProject.id)) {
+            setEnrollProject(null);
+            setEnrollMessage("Ya estás inscrito en este proyecto.");
+            setTimeout(() => setEnrollMessage(null), 3000);
+            return;
+        }
+
+        setIsEnrolling(true);
+        try {
+            await enrollInProject(enrollProject.id);
+            setProjects((prev) => prev.map((p) =>
+                p.id === enrollProject.id
+                    ? { ...p, volunteersEnrolled: p.volunteersEnrolled + 1 }
+                    : p
+            ));
+            setMyEnrollmentIds((prev) => [...prev, enrollProject.id]);
+            setEnrollProject(null);
+            setEnrollMessage("¡Te has inscrito exitosamente al proyecto!");
+            setTimeout(() => setEnrollMessage(null), 3000);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Ocurrió un error al procesar tu inscripción.";
+            setEnrollProject(null);
+            setEnrollMessage(msg);
+            setTimeout(() => setEnrollMessage(null), 3000);
+        } finally {
+            setIsEnrolling(false);
+        }
     };
 
     return (
@@ -141,6 +193,20 @@ export function ProjectsListPage() {
                         </div>
                     )}
 
+                    {enrollMessage && (
+                        <div style={{
+                            padding: "12px 16px",
+                            borderRadius: "8px",
+                            backgroundColor: enrollMessage.startsWith("¡") ? "#dcfce7" : "#fef2f2",
+                            border: `1px solid ${enrollMessage.startsWith("¡") ? "#bbf7d0" : "#fecaca"}`,
+                            color: enrollMessage.startsWith("¡") ? "#15803d" : "#dc2626",
+                            fontSize: "14px",
+                            marginBottom: "16px",
+                        }}>
+                            {enrollMessage}
+                        </div>
+                    )}
+
                     {error && (
                         <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "16px", color: "#dc2626", marginBottom: "16px" }}>
                             {error}
@@ -161,7 +227,13 @@ export function ProjectsListPage() {
                                 style={{ cursor: "pointer" }}
                                 onClick={() => navigate(`/proyectos/${project.id}`)}
                             >
-                                <ProjectCard project={project} />
+                                <ProjectCard
+                                    project={project}
+                                    onEnroll={(p) => {
+                                        setEnrollProject(p);
+                                        setEnrollMessage(null);
+                                    }}
+                                />
                             </div>
                         ))}
                     </div>
@@ -195,6 +267,35 @@ export function ProjectsListPage() {
                     )}
                 </div>
             </div>
+            {enrollProject && (
+                <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                    <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "380px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "16px" }}>Confirmar inscripción</h2>
+                        <p style={{ fontSize: "14px", color: "#374151", marginBottom: "12px" }}>¿Deseas inscribirte en el proyecto <strong>{enrollProject.title}</strong>?</p>
+                        <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "8px" }}>📅 {enrollProject.date}</div>
+                        <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "8px" }}>📍 {enrollProject.location}</div>
+                        <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "16px" }}>👥 Cupo disponible: {enrollProject.volunteersMax - enrollProject.volunteersEnrolled} lugares</div>
+                        <div style={{ padding: "10px", backgroundColor: "#fefce8", borderRadius: "6px", fontSize: "13px", color: "#854d0e", marginBottom: "16px" }}>
+                            Nota: Recibirás una notificación por correo con los detalles.
+                        </div>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                            <button
+                                onClick={() => { setEnrollProject(null); setEnrollMessage(null); }}
+                                style={{ flex: 1, padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "14px" }}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleEnroll}
+                                disabled={isEnrolling || !!enrollMessage?.startsWith("¡")}
+                                style={{ flex: 1, padding: "10px", backgroundColor: "#16a34a", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}
+                            >
+                                {isEnrolling ? "Procesando..." : "Confirmar inscripción"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
