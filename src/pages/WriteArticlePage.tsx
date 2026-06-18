@@ -1,8 +1,9 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { type OutputData } from '@editorjs/editorjs';
 import { Editor } from '../components/Editor';
 import { getCategories } from '../services/articles/articles';
-import { publishDraft, submitDraft } from "../services/articles/drafts"
+import { publishDraft, submitDraft, updateDraft } from "../services/articles/drafts"
 import { uploadMedia } from '../services/media';
 import { getLocalProfile } from '../services/accounts';
 import { Header } from '../components/Header';
@@ -15,11 +16,9 @@ interface Category {
 }
 
 export const WriteArticlePage = () => {
-    const localProfile = getLocalProfile();
-    const authorId = getCurrentSession()?.sub;
-    const authorName = `${localProfile?.parentalSurname} ${localProfile?.maternalSurname} ${localProfile?.name}`;
-    const authorPfpUri = localProfile?.pfpUri || "";
+    const navigate = useNavigate();
 
+    const [draftId, setDraftId] = useState<string | null>(null);
     const [title, setTitle] = useState('');
     const [summary, setSummary] = useState('');
     const [categoryId, setCategoryId] = useState('');
@@ -30,6 +29,9 @@ export const WriteArticlePage = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+    const [formErrors, setFormErrors] = useState({ title: false, categoryId: false, content: false });
+    const [popupMessage, setPopupMessage] = useState<{ title: string; text: string; type: "success" | "error" | "info"; onClose?: () => void } | null>(null);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -63,208 +65,308 @@ export const WriteArticlePage = () => {
     };
 
     const handleSaveDraft = async () => {
-        if (!authorId) {
+        const session = getCurrentSession();
+        const currentAuthorId = session?.sub;
+        
+        if (!currentAuthorId) {
+            setPopupMessage({ title: "Sesión expirada", text: "Por favor inicia sesión nuevamente para guardar.", type: "error" });
             return;
         }
 
-        if (!title.trim() || !content) {
-            return alert('Faltan datos requeridos (Título y Contenido)');
+        const isTitleValid = !!title.trim();
+        const isCategoryValid = !!categoryId;
+        const isContentValid = !!content && !!content.blocks && content.blocks.length > 0;
+
+        if (!isTitleValid || !isCategoryValid || !isContentValid) {
+            setFormErrors({ title: !isTitleValid, categoryId: !isCategoryValid, content: !isContentValid });
+            setPopupMessage({ title: "Faltan datos", text: "El título, la categoría y el contenido son requeridos.", type: "error" });
+            return;
         }
+
         try {
+            const profile = getLocalProfile();
+            const currentAuthorName = profile 
+                ? `${profile.name || ''} ${profile.parentalSurname || ''} ${profile.maternalSurname || ''}`.trim() 
+                : "Autor desconocido";
+            const currentAuthorPfpUri = profile?.pfpUri || "";
+
             const draftBody = {
-                id: "",
-                title: title,
-                summary: summary,
-                categoryId: categoryId,
-                coverUri: coverUri,
+                id: draftId || "",
+                title,
+                summary,
+                categoryId,
+                coverUri,
                 content: JSON.stringify(content),
-                authorId: authorId,
-                authorName: authorName,
-                authorPfpUri: authorPfpUri
+                authorId: currentAuthorId,
+                authorName: currentAuthorName,
+                authorPfpUri: currentAuthorPfpUri
+            };
+
+            if (!draftId) {
+                const response = await submitDraft(draftBody);
+                setDraftId(response.id);
+                setPopupMessage({ title: "Éxito", text: "Borrador guardado correctamente.", type: "success" });
+            } else {
+                await updateDraft(draftBody);
+                setPopupMessage({ title: "Éxito", text: "Borrador actualizado correctamente.", type: "success" });
             }
-            await submitDraft(draftBody);
-            alert('Borrador guardado con éxito.');
+            
+            setFormErrors({ title: false, categoryId: false, content: false });
+            
         } catch (e) {
             console.error(e);
+            setPopupMessage({ title: "Error", text: "Ocurrió un error al guardar el borrador.", type: "error" });
         }
     };
 
     const handlePublish = async () => {
-        if (!authorId) {
+        const session = getCurrentSession();
+        const currentAuthorId = session?.sub;
+        
+        if (!currentAuthorId) {
+            setPopupMessage({ title: "Sesión expirada", text: "Por favor inicia sesión nuevamente para publicar.", type: "error" });
             return;
         }
 
-        if (!title.trim() || !content) {
-            return alert('Faltan datos requeridos (Título y Contenido)');
-        }
-        try {
-            const draftBody = {
-                id: "",
-                title: title,
-                summary: summary,
-                categoryId: categoryId,
-                coverUri: coverUri,
-                content: JSON.stringify(content),
-                authorId: authorId,
-                authorName: authorName,
-                authorPfpUri: authorPfpUri
-            }
+        const isTitleValid = !!title.trim();
+        const isCategoryValid = !!categoryId;
+        const isContentValid = !!content && !!content.blocks && content.blocks.length > 0;
 
-            const submission = await submitDraft(draftBody);
-            const publicationBody = {
-                id: submission.id,
-                title: title,
-                summary: summary,
-                categoryId: categoryId,
-                coverUri: coverUri,
-                content: JSON.stringify(content),
-                authorId: authorId,
-                authorName: authorName,
-                authorPfpUri: authorPfpUri
+        if (!isTitleValid || !isCategoryValid || !isContentValid) {
+            setFormErrors({ title: !isTitleValid, categoryId: !isCategoryValid, content: !isContentValid });
+            setPopupMessage({ title: "Faltan datos", text: "El título, la categoría y el contenido son requeridos. Por favor completa todos los campos antes de publicar.", type: "error" });
+            return;
+        }
+
+        try {
+            const profile = getLocalProfile();
+            const currentAuthorName = profile 
+                ? `${profile.name || ''} ${profile.parentalSurname || ''} ${profile.maternalSurname || ''}`.trim() 
+                : "Autor desconocido";
+            const currentAuthorPfpUri = profile?.pfpUri || "";
+
+            const draftBody = {
+                id: draftId || "",
+                title,
+                summary,
+                categoryId,
+                coverUri,
+                content: JSON.stringify(content), 
+                authorId: currentAuthorId, 
+                authorName: currentAuthorName, 
+                authorPfpUri: currentAuthorPfpUri
+            };
+
+            let currentDraftId = draftId;
+
+            if (!currentDraftId) {
+                const submission = await submitDraft(draftBody);
+                currentDraftId = submission.id;
+                setDraftId(currentDraftId);
             }
+            
+            const publicationBody = { ...draftBody, id: currentDraftId };
 
             await publishDraft(publicationBody);
-            alert('¡Artículo publicado con éxito!');
+            setFormErrors({ title: false, categoryId: false, content: false });
+            
+            setPopupMessage({ 
+                title: "Éxito", 
+                text: "Tu artículo ha sido enviado a revisión correctamente.", 
+                type: "success",
+                onClose: () => navigate("/mis-articulos") 
+            });
         } catch (e) {
             console.error(e);
+            setPopupMessage({ title: "Error", text: "Ocurrió un error al publicar el artículo.", type: "error" });
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col w-full">
+        <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6", display: "flex", flexDirection: "column" }}>
             <Header />
 
-            <div style={{ display: 'flex', padding: '20px 40px', gap: '20px' }} />
-
-            {/* CONTENEDOR PRINCIPAL GRIS */}
-            <main className="flex-1 w-full flex justify-center items-start p28">
+            <main style={{ flex: 1, maxWidth: "87.5rem", width: "100%", margin: "0 auto", padding: "2rem 1.5rem", display: "flex", gap: "1.75rem", alignItems: "flex-start", boxSizing: "border-box" }}>
                 
-                {/* ÁREA DE TRABAJO (CONTENEDOR BLANCO) */}
-                <div className="w-full max-w-5xl bg-white border border-gray-300 rounded-2xl shadow-sm p-8 sm:p-12 flex flex-col gap-4">
+                {/* Left section */}
+                <section style={{ flex: "3", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                     
-                    {/* SECCIÓN 1: TÍTULO SUPERIOR */}
-                    <div className="border-b border-gray-200">
-                        <h2 className="text-3xl font-bold text-gray-800">
-                            Escribe tu artículo de conservación
-                        </h2>
-                    </div>
-
-                    {/* SECCIÓN 2: FILA DE METADATOS */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div style={{ backgroundColor: "white", borderRadius: "0.75rem", padding: "1.75rem", boxShadow: "0 0.25rem 0.75rem rgba(0,0,0,0.05)", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                         
-                        {/* 1. Título del artículo */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-bold text-gray-700">Título del articulo</label>
+                        <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0.5rem" }}>
+                                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", color: formErrors.title ? "#dc2626" : "#374151", transition: "color 0.2s" }}>Título del artículo</label>
+                                <span style={{ fontSize: "0.75rem", color: "#9ca3af", fontFamily: "monospace" }}>{title.length}/128</span>
+                            </div>
                             <input
                                 type="text"
                                 value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Ingresa el título..."
-                                className="w-full h-12 border-2 border-gray-300 rounded-lg px-4 text-sm focus:border-blue-500 focus:outline-none transition-colors"
+                                onChange={(e) => {
+                                    setTitle(e.target.value);
+                                    if (formErrors.title && e.target.value.trim().length > 0) setFormErrors(prev => ({ ...prev, title: false }));
+                                }}
+                                maxLength={128}
+                                placeholder="Ingresa el título aquí..."
+                                style={{ 
+                                    width: "100%", padding: "0.75rem 1rem", borderRadius: "0.5rem", fontSize: "0.9375rem", outline: "none", boxSizing: "border-box", transition: "all 0.2s",
+                                    border: formErrors.title ? "0.0625rem solid #dc2626" : "0.0625rem solid #d1d5db",
+                                    boxShadow: formErrors.title ? "0 0 0 0.125rem rgba(220, 38, 38, 0.15)" : "none"
+                                }}
                             />
                         </div>
 
-                        {/* 2. Descripción breve */}
-                        <div className="flex flex-col gap-2">
-                            <div className="flex justify-between items-end">
-                                <label className="text-sm font-bold text-gray-700">Descripción breve</label>
-                                <span className="text-xs text-gray-400 font-mono">{summary.length}/500</span>
+                        <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0.5rem" }}>
+                                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", color: "#374151" }}>Descripción breve</label>
+                                <span style={{ fontSize: "0.75rem", color: "#9ca3af", fontFamily: "monospace" }}>{summary.length}/500</span>
                             </div>
                             <textarea
                                 value={summary}
                                 onChange={(e) => setSummary(e.target.value)}
                                 maxLength={500}
                                 placeholder="Resumen del artículo..."
-                                className="w-full h-12 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm resize-none overflow-y-auto focus:border-blue-500 focus:outline-none transition-colors"
+                                style={{ width: "100%", minHeight: "5rem", padding: "0.75rem 1rem", borderRadius: "0.5rem", border: "0.0625rem solid #d1d5db", fontSize: "0.875rem", resize: "vertical", outline: "none", boxSizing: "border-box" }}
                             />
                         </div>
 
-                        {/* 3. Categoría */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-bold text-gray-700">Categoría</label>
+                        <div>
+                            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", color: formErrors.categoryId ? "#dc2626" : "#374151", marginBottom: "0.5rem", transition: "color 0.2s" }}>Categoría</label>
                             <select
                                 value={categoryId}
-                                onChange={(e) => setCategoryId(e.target.value)}
+                                onChange={(e) => {
+                                    setCategoryId(e.target.value);
+                                    if (formErrors.categoryId && e.target.value !== "") setFormErrors(prev => ({ ...prev, categoryId: false }));
+                                }}
                                 disabled={isLoadingCategories}
-                                className="w-full h-12 border-2 border-gray-300 rounded-lg px-4 text-sm bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                                style={{ 
+                                    width: "100%", padding: "0.75rem 1rem", borderRadius: "0.5rem", fontSize: "0.875rem", outline: "none", backgroundColor: "white", boxSizing: "border-box", transition: "all 0.2s",
+                                    border: formErrors.categoryId ? "0.0625rem solid #dc2626" : "0.0625rem solid #d1d5db",
+                                    boxShadow: formErrors.categoryId ? "0 0 0 0.125rem rgba(220, 38, 38, 0.15)" : "none"
+                                }}
                             >
-                                <option value="">Selecciona...</option>
+                                <option value="">Selecciona una categoría...</option>
                                 {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.name}
-                                    </option>
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
                         </div>
-
-                        {/* 4. Portada */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-bold text-gray-700">Portada</label>
-                            <div className="flex items-center gap-3 h-12">
-                                <label className="flex-1 cursor-pointer bg-gray-50 hover:bg-gray-100 border-2 border-gray-300 text-gray-700 rounded-lg flex items-center justify-center h-full text-sm font-bold transition-colors">
-                                    {isUploading ? 'Subiendo...' : 'Subir Imagen'}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleCoverUpload}
-                                        disabled={isUploading}
-                                        className="hidden"
-                                    />
-                                </label>
-                                {coverUri && (
-                                    <img src={coverUri} alt="Miniatura" className="w-12 h-12 object-cover rounded-lg border-2 border-gray-300 shrink-0" />
-                                )}
-                            </div>
-                        </div>
-
                     </div>
 
-                    {/* SECCIÓN 3: LIENZO DE ESCRITURA */}
-                    <div className="w-full flex justify-center">
-                        <div className="w-full max-w-4xl border-2 border-gray-300 rounded-xl p-8 h-[300px] overflow-y-auto bg-white shadow-inner focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-colors">
-                            <Editor onChange={(data) => setContent(data)} />
-                        </div>
+                    {/* EditorJS */}
+                    <div style={{ 
+                        backgroundColor: "white", borderRadius: "0.75rem", padding: "1.75rem", minHeight: "31.25rem", transition: "all 0.2s", boxSizing: "border-box",
+                        boxShadow: formErrors.content ? "0 0 0 0.125rem rgba(220, 38, 38, 0.15), 0 0.25rem 0.75rem rgba(0,0,0,0.05)" : "0 0.25rem 0.75rem rgba(0,0,0,0.05)",
+                        border: formErrors.content ? "0.0625rem solid #dc2626" : "0.0625rem solid transparent"
+                    }}>
+                        <Editor 
+                            initialData={content || undefined} 
+                            onChange={(data) => {
+                                setContent(data);
+                                if (formErrors.content && data.blocks && data.blocks.length > 0) setFormErrors(prev => ({ ...prev, content: false }));
+                            }} 
+                        />
                     </div>
 
-                    {/* SECCIÓN 4: BOTONES DE ACCIÓN */}
-                    <div className="flex justify-end items-center gap-4 border-t border-gray-100 pt-4">
-                        <button
-                            onClick={handleSaveDraft}
-                            className="px-6 py-3 border-2 border-gray-400 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                            Guardar Borrador
-                        </button>
-                        <button
+                </section>
+
+                {/* Right Section */}
+                <aside style={{ flex: "1", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                    
+                    <div style={{ backgroundColor: "white", borderRadius: "0.75rem", padding: "1.5rem", boxShadow: "0 0.25rem 0.75rem rgba(0,0,0,0.05)" }}>
+                        <label style={{ display: "block", fontSize: "0.9375rem", fontWeight: "bold", color: "#111827", marginBottom: "1rem" }}>Portada</label>
+                        
+                        <div style={{ width: "100%", height: "10rem", borderRadius: "0.5rem", overflow: "hidden", border: "0.0625rem solid #e5e7eb", backgroundColor: "#f9fafb", marginBottom: "1rem" }}>
+                            {coverUri ? (
+                                <img src={coverUri} alt="Portada actual" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "0.8125rem" }}>
+                                    Sin portada
+                                </div>
+                            )}
+                        </div>
+
+                        <label style={{ display: "block", width: "100%", padding: "0.625rem", textAlign: "center", backgroundColor: "#f3f4f6", color: "#374151", border: "0.0625rem solid #d1d5db", borderRadius: "0.375rem", cursor: isUploading ? "not-allowed" : "pointer", fontSize: "0.875rem", fontWeight: "600", transition: "background-color 0.2s", boxSizing: "border-box" }}>
+                            {isUploading ? "Subiendo..." : (coverUri ? "Cambiar portada" : "Subir portada")}
+                            <input type="file" accept="image/*" onChange={handleCoverUpload} disabled={isUploading} style={{ display: "none" }} />
+                        </label>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", backgroundColor: "white", borderRadius: "0.75rem", padding: "1.5rem", boxShadow: "0 0.25rem 0.75rem rgba(0,0,0,0.05)" }}>
+                        <button 
                             onClick={() => setShowPreview(true)}
-                            className="px-6 py-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-200 transition-colors"
+                            style={{ width: "100%", padding: "0.875rem", backgroundColor: "#f3f4f6", color: "#1f2937", border: "0.0625rem solid #d1d5db", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.875rem", fontWeight: "bold", boxSizing: "border-box" }}
                         >
-                            Vista Previa
+                            Vista previa
                         </button>
-                        <button
-                            onClick={handlePublish}
-                            className="px-8 py-3 bg-blue-600 border-2 border-blue-600 rounded-lg text-sm font-bold text-white hover:bg-blue-700 transition-colors shadow-sm"
+
+                        <button 
+                            onClick={handleSaveDraft} 
+                            style={{ width: "100%", padding: "0.875rem", backgroundColor: "white", color: "#374151", border: "0.0625rem solid #d1d5db", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.875rem", fontWeight: "bold", boxSizing: "border-box" }}
                         >
-                            Publicar Articulo
+                            Guardar borrador
+                        </button>
+
+                        <button 
+                            onClick={handlePublish} 
+                            style={{ width: "100%", padding: "0.875rem", backgroundColor: "#2563eb", color: "white", border: "none", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.875rem", fontWeight: "bold", boxShadow: "0 0.125rem 0.25rem rgba(37, 99, 235, 0.2)", boxSizing: "border-box" }}
+                        >
+                            Publicar artículo
                         </button>
                     </div>
 
-                </div>
+                </aside>
             </main>
-
-            {/* MODAL DE VISTA PREVIA */}
             {showPreview && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-                        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                            <h2 className="font-bold text-xl text-gray-800">Vista Previa</h2>
-                            <button
+                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+                    <div style={{ backgroundColor: "white", borderRadius: "1rem", width: "100%", maxWidth: "62.5rem", maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 1.5rem 3rem rgba(0,0,0,0.25)" }}>
+                        <div style={{ padding: "1.5rem", borderBottom: "0.0625rem solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#f9fafb" }}>
+                            <h2 style={{ fontWeight: "bold", fontSize: "1.25rem", color: "#1f2937", margin: 0 }}>Vista Previa</h2>
+                            <button 
                                 onClick={() => setShowPreview(false)}
-                                className="text-gray-500 hover:text-gray-800 font-bold px-4 py-2 rounded-lg border-2 border-gray-300 bg-white"
+                                style={{ color: "#6b7280", fontWeight: "bold", padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "0.125rem solid #d1d5db", backgroundColor: "white", cursor: "pointer" }}
                             >
-                                Cerrar
+                                X
                             </button>
                         </div>
-                        <ArticleContent content={JSON.stringify(content)}/>
+                        <div style={{ overflowY: "auto", flex: 1, padding: "1.5rem" }}>
+                            <ArticleContent content={JSON.stringify(content)}/>
+                        </div>
+                        <button 
+                            onClick={() => setShowPreview(false)}
+                            style={{ color: "#6b7280", fontWeight: "bold", padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "0.125rem solid #d1d5db", backgroundColor: "white", cursor: "pointer" }}
+                        >
+                            Volver a Editar
+                        </button>
+                        <button 
+                            onClick={() => handlePublish()}
+                            style={{ color: "white", fontWeight: "bold", padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "0.125rem solid #d1d5db", backgroundColor: "#2563eb", cursor: "pointer" }}
+                        >
+                            Publicar
+                        </button>
+                    </div>
+                </div>
+            )}
+            {popupMessage && (
+                <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: "1rem" }}>
+                    <div style={{ backgroundColor: "white", borderRadius: "0.75rem", padding: "1.75rem", width: "100%", maxWidth: "25rem", boxShadow: "0 1.25rem 3.75rem rgba(0,0,0,0.15)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                        <h2 style={{ fontSize: "1.125rem", fontWeight: "bold", margin: 0, color: popupMessage.type === "error" ? "#dc2626" : (popupMessage.type === "success" ? "#15803d" : "#374151") }}>
+                            {popupMessage.title}
+                        </h2>
+                        <p style={{ fontSize: "0.875rem", color: "#374151", margin: 0, lineHeight: "1.5" }}>
+                            {popupMessage.text}
+                        </p>
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+                            <button 
+                                onClick={() => {
+                                    const action = popupMessage.onClose;
+                                    setPopupMessage(null);
+                                    if (action) action();
+                                }} 
+                                style={{ padding: "0.625rem 1.25rem", backgroundColor: "#f3f4f6", color: "#374151", border: "0.0625rem solid #d1d5db", borderRadius: "0.375rem", cursor: "pointer", fontSize: "0.875rem", fontWeight: "600", transition: "background-color 0.2s" }}
+                            >
+                                Aceptar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

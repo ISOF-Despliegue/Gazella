@@ -101,6 +101,7 @@ async function createWindow() {
     height: 760,
     minWidth: 960,
     minHeight: 640,
+    useContentSize: true,
     backgroundColor: '#ffffff',
     webPreferences: {
       contextIsolation: true,

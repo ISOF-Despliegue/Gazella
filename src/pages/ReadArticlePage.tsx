@@ -10,7 +10,8 @@ import {
     checkIfExistingLike, 
     likeArticle, 
     revokeLike,
-    deleteComment
+    deleteComment,
+    deleteOwnComment
 } from '../services/articles/interaction';
 import type { Article, FeaturedArticle, Comment } from '../types/article';
 import { SafeImage } from '../components/SafeImage';
@@ -29,12 +30,6 @@ function formatDate(value?: string) : string {
 export const ReadArticlePage = () => {
     const { articleId } = useParams<{ articleId: string }>();
     const navigate = useNavigate();
-    const localProfile = getLocalProfile();
-    const session = getCurrentSession();
-    const canModerate = session?.roles?.some(role => role.toLowerCase() === 'moderator') ?? false;
-    
-    const currentUserName = localProfile ? `${localProfile.name || ''} ${localProfile.parentalSurname || ''} ${localProfile.maternalSurname || ''}`.trim() : "Usuario Anónimo";
-    const currentUserPfp = localProfile?.pfpUri || "";
 
     const [article, setArticle] = useState<Article | null>(null);
     const [featuredArticles, setFeaturedArticles] = useState<FeaturedArticle[]>([]);
@@ -55,12 +50,19 @@ export const ReadArticlePage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const commentInputRef = useRef<HTMLInputElement>(null);
 
+    const [popupMessage, setPopupMessage] = useState<{ title: string; text: string; type: "success" | "error" | "info"; onClose?: () => void } | null>(null);
+    const [confirmDeleteComment, setConfirmDeleteComment] = useState<string | null>(null);
+    const [isAdminDeleteComment, setAdminDeleteComment] = useState<boolean>(false);
+    const [isDeletingComment, setIsDeletingComment] = useState(false);
+
     useEffect(() => {
         if (!articleId) {
             return;
         }
 
         const loadArticleData = async () => {
+            const currentSession = getCurrentSession();
+
             setIsLoading(true);
             setError(null);
             try {
@@ -68,7 +70,7 @@ export const ReadArticlePage = () => {
 
                 const [fetchedFeatured, userLiked] = await Promise.all([
                     fetchedArticle.status === "Published" ? getFeaturedArticles(3) : Promise.resolve([]),
-                    session != null ? checkIfExistingLike(articleId).catch(() => false) : false
+                    currentSession != null ? checkIfExistingLike(articleId).catch(() => false) : false
                 ]);
 
                 const fetchedProfile = await getProfileById(fetchedArticle.authorId).catch((err) => {
@@ -88,7 +90,7 @@ export const ReadArticlePage = () => {
 
                     setFollowerCount(followers.length);
                     setIsFollowingAuthor(
-                        !!followers.find((entry) => entry.follower.id === session?.sub),
+                        !!followers.some((entry) => entry.follower.id === currentSession?.sub),
                     );
                 }
 
@@ -112,8 +114,9 @@ export const ReadArticlePage = () => {
             return;
         }
 
-        if (!localProfile) {
-            return alert("Debes iniciar sesión para dar me gusta.");
+        const currentSession = getCurrentSession();
+        if (!currentSession) {
+            return setPopupMessage({ title: "Inicia sesión", text: "Debes iniciar sesión para dar me gusta.", type: "info" });
         }
 
         const previouslyLiked = isLiked;
@@ -133,12 +136,18 @@ export const ReadArticlePage = () => {
             setIsLiked(previouslyLiked);
             setLikesCount(prev => previouslyLiked ? prev + 1 : prev - 1);
             console.error("Failed to like article:", error);
+            setPopupMessage({ title: "Error", text: "Hubo un problema al registrar tu me gusta.", type: "error" });
         }
     };
 
     const handleFollowToggle = async () => {
-        if (!session || !authorProfile?.id) {
-            return alert('Debes iniciar sesión para seguir o dejar de seguir al autor.');
+        const currentSession = getCurrentSession();
+        if (!currentSession) {
+            return setPopupMessage({ title: "Inicia sesión", text: "Debes iniciar sesión para seguir o dejar de seguir al autor.", type: "info" });
+        }
+
+        if (!authorProfile?.id) {
+            return setPopupMessage({ title: "Error", text: "No es posible seguir a este autor porque su cuenta no esta disponible ahora mismo o ya no existe.", type: "error"})
         }
 
         const targetAccountId = authorProfile.id;
@@ -157,7 +166,7 @@ export const ReadArticlePage = () => {
             setIsFollowingAuthor(currentlyFollowing);
             setFollowerCount((count) => currentlyFollowing ? count + 1 : count - 1);
             console.error('Error al actualizar seguimiento:', err);
-            alert('No se pudo actualizar el seguimiento. Intenta de nuevo.');
+            setPopupMessage({ title: "Error", text: "No se pudo actualizar el seguimiento. Intenta de nuevo.", type: "error" });
         }
     };
 
@@ -166,24 +175,29 @@ export const ReadArticlePage = () => {
         if (!text || !articleId || article?.status !== "Published") {
             return;
         }
-        if (!localProfile) {
-            return alert("Debes iniciar sesión para comentar.");
+
+        const currentProfile = getLocalProfile();
+        if (!currentProfile) {
+            return setPopupMessage({ title: "Inicia sesión", text: "Debes iniciar sesión para comentar.", type: "info" });
         }
 
         setIsSubmitting(true);
         try {
+            const freshUserName = `${currentProfile.name || ''} ${currentProfile.parentalSurname || ''} ${currentProfile.maternalSurname || ''}`.trim() || "Usuario Anónimo";
+            const freshUserPfp = currentProfile.pfpUri || "";
+
             const res = await postComment(articleId, {
-                authorName: currentUserName,
-                authorPfpUri: currentUserPfp,
+                authorName: freshUserName,
+                authorPfpUri: freshUserPfp,
                 content: text
             });
 
             if (res.success) {
                 const newComment: Comment = {
                     id: res.commentId,
-                    authorId: localProfile.id || "me",
-                    authorName: currentUserName,
-                    authorPfpUri: currentUserPfp,
+                    authorId: currentProfile.id || "me",
+                    authorName: freshUserName,
+                    authorPfpUri: freshUserPfp,
                     content: text,
                     postedAt: formatDate(res.postedAt)
                 };
@@ -192,13 +206,66 @@ export const ReadArticlePage = () => {
                 setCommentsCount(prev => prev + 1);
                 setCommentInput('');
             } else {
-                alert("No se pudo publicar tu comentario. Intenta de nuevo más tarde.");
+                setPopupMessage({ title: "Error", text: "No se pudo publicar tu comentario. Intenta de nuevo más tarde.", type: "error" });
             }
         } catch (error) {
             console.error("Failed to post comment:", error);
-            alert("Hubo un error al enviar tu comentario.");
+            setPopupMessage({ title: "Error", text: "Hubo un error al enviar tu comentario.", type: "error" });
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteOwnComment = (commentId: string) => {
+        setConfirmDeleteComment(commentId);
+        setAdminDeleteComment(false);
+    }
+
+    const handleAdminDeleteComment = (commentId: string) => {
+        setConfirmDeleteComment(commentId);
+        setAdminDeleteComment(true);
+    }
+
+    const executeDeleteCommentAdmin = async () => {
+        if (!confirmDeleteComment || !articleId) {
+            return;
+        }
+
+        setIsDeletingComment(true);
+        try {
+            await deleteComment(articleId, confirmDeleteComment);
+            setComments(prev => prev.filter(c => c.id !== confirmDeleteComment));
+            setCommentsCount(prev => Math.max(0, prev - 1));
+            setPopupMessage({ title: "Éxito", text: "Comentario eliminado correctamente.", type: "success" });
+        } catch (err) {
+            console.error("Error al eliminar comentario:", err);
+            setPopupMessage({ title: "Error", text: "No se pudo completar la eliminación del comentario.", type: "error" });
+        } finally {
+            setIsDeletingComment(false);
+            setAdminDeleteComment(false);
+            setConfirmDeleteComment(null);
+        }
+    };
+
+    const executeDeleteOwnComment = async () => {
+        const authorId = getCurrentSession()?.sub;
+        if (!confirmDeleteComment || !articleId || !authorId) {
+            return;
+        }
+
+        setIsDeletingComment(true);
+        try {
+            await deleteOwnComment(articleId, confirmDeleteComment, authorId)
+            setComments(prev => prev.filter(c => c.id !== confirmDeleteComment));
+            setCommentsCount(prev => Math.max(0, prev - 1));
+            setPopupMessage({ title: "Éxito", text: "Comentario eliminado correctamente.", type: "success" });
+        } catch (err) {
+            console.error("Error al eliminar comentario:", err);
+            setPopupMessage({ title: "Error", text: "No se pudo completar la eliminación del comentario.", type: "error" });
+        } finally {
+            setIsDeletingComment(false);
+            setAdminDeleteComment(false);
+            setConfirmDeleteComment(null);
         }
     };
 
@@ -242,6 +309,11 @@ export const ReadArticlePage = () => {
     const isPreview = (article.status === "Draft" || article.status === "UnderReview" || article.status === "Rejected");
     const isPublished = article.status === "Published";
 
+    const session = getCurrentSession();
+    const currentProfile = getLocalProfile();
+    const canModerate = session?.roles?.some(role => role.toLowerCase() === 'moderator') ?? false;
+    const currentUserPfp = currentProfile?.pfpUri || "";
+
     return (
         <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
             <Header />
@@ -263,8 +335,8 @@ export const ReadArticlePage = () => {
                         </div>
                     )}
                     {/* Header */}
-                    <div className="p-6 md:p-8 border-b border-gray-200 shrink-0 bg-white z-10 flex flex-col items-center text-center">
-                        <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+                    <div className="border-b border-gray-200 shrink-0 bg-white z-10 flex flex-col items-center text-center" style={{ padding: "1.75rem", boxSizing: "border-box" }}>
+                        <h1 className="text-1xl md:text-2xl font-extrabold text-gray-900 mb-6 leading-tight">
                             {article.title}
                         </h1>
                         <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium text-gray-500">
@@ -284,7 +356,7 @@ export const ReadArticlePage = () => {
                     </div>
 
                     {/* Body */}
-                    <div className="flex-1 overflow-y-auto scroll-smooth p-6 md:p-10 bg-white">
+                    <div className="flex-1 overflow-y-auto scroll-smooth bg-white" style={{ padding: "1.75rem", boxSizing: "border-box" }}>
                         
                         <div className="w-full max-h-[450px] h-[450px] rounded-xl mb-10 border border-gray-200 overflow-hidden bg-gray-50 shrink-0">
                             <SafeImage 
@@ -328,7 +400,7 @@ export const ReadArticlePage = () => {
                             </button>
 
                             <button 
-                                onClick={() => navigator.clipboard.writeText(globalThis.location.href).then(() => alert("Enlace copiado!"))}
+                                onClick={() => navigator.clipboard.writeText(globalThis.location.href).then(() => setPopupMessage({ title: "Éxito", text: "¡Enlace copiado al portapapeles!", type: "success" }))}
                                 disabled={!isPublished}
                                 className={`flex items-center gap-2 transition-colors ${
                                     isPublished ? '' : 'opacity-50 cursor-not-allowed text-gray-600'
@@ -369,18 +441,15 @@ export const ReadArticlePage = () => {
 
                                             {canModerate && (
                                                 <button
-                                                    onClick={async () => {
-                                                        if (globalThis.confirm("¿Estás seguro de que deseas eliminar este comentario? Esta acción no se puede deshacer.")) {
-                                                            try {
-                                                                await deleteComment(articleId!, comment.id);
-                                                                setComments(prev => prev.filter(c => c.id !== comment.id));
-                                                                setCommentsCount(prev => Math.max(0, prev - 1));
-                                                            } catch (err) {
-                                                                console.error("Error al eliminar comentario:", err);
-                                                                alert("No se pudo completar la eliminación del comentario.");
-                                                            }
-                                                        }
-                                                    }}
+                                                    onClick={() => handleAdminDeleteComment(comment.id)}
+                                                    className="text-xs text-red-500 hover:text-red-700 font-bold shrink-0 ml-4 px-2.5 py-1 rounded border border-red-200 hover:border-red-300 bg-white transition-colors"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            )}
+                                            {comment.authorId === session?.sub && (
+                                                <button
+                                                    onClick={() => handleDeleteOwnComment(comment.id)}
                                                     className="text-xs text-red-500 hover:text-red-700 font-bold shrink-0 ml-4 px-2.5 py-1 rounded border border-red-200 hover:border-red-300 bg-white transition-colors"
                                                 >
                                                     Eliminar
@@ -391,12 +460,11 @@ export const ReadArticlePage = () => {
                                 )}
                             </div>
                         </div>
-
                     </div>
 
                     {/* Footer */}
                     {session ? (
-                        <div className="p-4 md:p-6 border-t border-gray-200 bg-gray-50 shrink-0 flex items-center gap-4 z-10">
+                        <div className="border-t border-gray-200 bg-gray-50 shrink-0 flex items-center gap-4 z-10" style={{ padding: "1.5rem", boxSizing: "border-box" }}>
                             <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-300 bg-gray-100">
                                 <SafeImage 
                                     src={currentUserPfp} 
@@ -427,11 +495,11 @@ export const ReadArticlePage = () => {
                                     : 'bg-gray-300 text-gray-400 cursor-not-allowed'
                                 }`}
                             >
-                                {isSubmitting ? 'Enviando...' : 'Enviar'}
+                                {isSubmitting ? 'Enviando...' : 'Comentar'}
                             </button>
                         </div>
                     ) : (
-                        <div className="p-4 md:p-6 border-t border-gray-200 bg-gray-50 w-full flex items-center justify-center z-10">
+                        <div className="border-t border-gray-200 bg-gray-50 w-full flex items-center justify-center z-10" style={{ padding: "1.5rem", boxSizing: "border-box" }}>
                             <div style={{ width: '100%', padding: '16px', backgroundColor: '#f3f4f6', borderRadius: '8px', textAlign: 'center', fontSize: '14px', color: '#6b7280', border: '1px solid #e5e7eb' }}>
                                 Debes <span style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '600', textDecoration: 'underline' }} onClick={() => navigate('/login')}>iniciar sesión</span> para publicar un comentario o interactuar con el artículo.
                             </div>
@@ -442,7 +510,7 @@ export const ReadArticlePage = () => {
                 {/* Lateral bar */}
                 <aside className="w-[320px] hidden lg:flex flex-col gap-6 overflow-y-auto h-full pb-4 shrink-0">
                     
-                    <div className="bg-white p-6 rounded-2xl border border-gray-300 shadow-sm flex flex-col items-center text-center shrink-0">
+                    <div className="bg-white rounded-2xl border border-gray-300 shadow-sm flex flex-col items-center text-center shrink-0" style={{ padding: "1.5rem", boxSizing: "border-box" }}>
                         <h3 className="w-full text-left text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Sobre el autor</h3>
                         
                         <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-gray-50 shadow-sm bg-gray-100 shrink-0">
@@ -476,7 +544,7 @@ export const ReadArticlePage = () => {
                     </div>
 
                     {isPublished && featuredArticles.length > 0 && (
-                        <div className="bg-white p-6 rounded-2xl border border-gray-300 shadow-sm flex flex-col shrink-0">
+                        <div className="bg-white rounded-2xl border border-gray-300 shadow-sm flex flex-col shrink-0" style={{ padding: "1.5rem", boxSizing: "border-box" }}>
                             <h3 className="text-xs text-center font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Artículos Destacados</h3>
                             <div className="flex flex-col gap-5">
                                 {featuredArticles.map((related) => (
@@ -506,6 +574,84 @@ export const ReadArticlePage = () => {
                     )}
                 </aside>
             </main>
+            {(confirmDeleteComment && isAdminDeleteComment) && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ padding: "1rem" }}>
+                    <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl bg-white shadow-2xl" style={{ padding: "1.75rem", boxSizing: "border-box" }}>
+                        <h2 className="m-0 text-lg font-bold text-gray-900">
+                            Eliminar comentario
+                        </h2>
+                        <p className="m-0 text-sm leading-relaxed text-gray-700">
+                            ¿Estás seguro de que deseas eliminar este comentario? Esta acción no se puede deshacer.
+                        </p>
+                        <div className="mt-2 flex gap-3">
+                            <button
+                                onClick={() => setConfirmDeleteComment(null)}
+                                className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={executeDeleteCommentAdmin}
+                                disabled={isDeletingComment}
+                                className="flex-1 rounded-md border border-transparent bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {isDeletingComment ? "Eliminando..." : "Sí, eliminar"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {confirmDeleteComment && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ padding: "1rem" }}>
+                    <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl bg-white shadow-2xl" style={{ padding: "1.75rem", boxSizing: "border-box" }}>
+                        <h2 className="m-0 text-lg font-bold text-gray-900">
+                            Eliminar comentario
+                        </h2>
+                        <p className="m-0 text-sm leading-relaxed text-gray-700">
+                            ¿Deseas eliminar este comentario?
+                        </p>
+                        <div className="mt-2 flex gap-3">
+                            <button
+                                onClick={() => setConfirmDeleteComment(null)}
+                                className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={executeDeleteOwnComment}
+                                disabled={isDeletingComment}
+                                className="flex-1 rounded-md border border-transparent bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {isDeletingComment ? "Eliminando..." : "Sí, eliminar"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {popupMessage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ padding: "1rem" }}>
+                    <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl bg-white shadow-2xl" style={{ padding: "1.75rem", boxSizing: "border-box" }}>
+                        <h2 className={`m-0 text-lg font-bold ${popupMessage.type === 'error' ? 'text-red-600' : popupMessage.type === 'success' ? 'text-green-700' : 'text-blue-600'}`}>
+                            {popupMessage.title}
+                        </h2>
+                        <p className="m-0 text-sm leading-relaxed text-gray-700">
+                            {popupMessage.text}
+                        </p>
+                        <div className="mt-2 flex justify-end">
+                            <button
+                                onClick={() => {
+                                    const action = popupMessage.onClose;
+                                    setPopupMessage(null);
+                                    if (action) action();
+                                }}
+                                className="rounded-md border border-gray-300 bg-gray-100 px-5 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-200"
+                            >
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

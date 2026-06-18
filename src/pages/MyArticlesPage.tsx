@@ -7,7 +7,7 @@ import { Header } from "../components/Header";
 import { SafeImage } from "../components/SafeImage";
 
 
-type TabFilter = "todos" | "publicados" | "enRevision" | "borradores" | "rechazados" | "eliminados"
+type TabFilter = "todos" | "publicados" | "enRevision" | "borradores" | "rechazados"
 
 function formatDate(value?: string) : string {
     if (!value) {
@@ -69,19 +69,19 @@ function getTextColor(isEditable: boolean, status: string) {
 
 export function MyArticlesPage() {
     const navigate = useNavigate();
-    const session = getCurrentSession();
 
     const [articles, setArticles] = useState<MyArticle[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabFilter>("todos");
-    const [actionMessage, setActionMessage] = useState<{ text: string; type: "ok" | "err" } | null>(null);
+    const [popupMessage, setPopupMessage] = useState<{ title: string; text: string; type: "success" | "error" | "info"; onClose?: () => void } | null>(null);
 
     const [confirmDeleteArticle, setConfirmDeleteArticle] = useState<MyArticle | null>(null);
     const [isDeleting, setIsDeleting] = useState(false); 
 
     useEffect(() => {
-        if (!session?.sub) {
+        const currentSession = getCurrentSession();
+        if (!currentSession?.sub) {
             navigate("/login");
             return;
         }
@@ -98,8 +98,7 @@ export function MyArticlesPage() {
         publicados: articles.filter((a) => a.status === "Published"),
         enRevision: articles.filter((a) => a.status === "UnderReview"),
         borradores: articles.filter((a) => a.status === "Draft"),
-        rechazados: articles.filter((a) => a.status === "Rejected"),
-        eliminados: articles.filter((a) => a.status === "Removed")
+        rechazados: articles.filter((a) => a.status === "Rejected")
     }
 
     const tabLabels: Record<TabFilter, string> = {
@@ -107,25 +106,41 @@ export function MyArticlesPage() {
         publicados: `Publicados (${categorized.publicados.length})`,
         enRevision: `En revision (${categorized.enRevision.length})`,
         borradores: `Borradores (${categorized.borradores.length})`,
-        rechazados: `Rechazados (${categorized.rechazados.length})`,
-        eliminados: `Eliminados (${categorized.eliminados.length})`
+        rechazados: `Rechazados (${categorized.rechazados.length})`
     }
 
     const displayed = categorized[activeTab];
 
     const handleDeleteArticle = async(article: MyArticle) => {
-        if (!session?.sub) {
+        const currentSession = getCurrentSession();
+        
+        if (!currentSession?.sub) {
+            setConfirmDeleteArticle(null);
+            setPopupMessage({ 
+                title: "Sesión expirada", 
+                text: "Por favor inicia sesión nuevamente para eliminar el artículo.", 
+                type: "error",
+                onClose: () => navigate("/login")
+            });
             return;
         }
         
         setIsDeleting(true);
 
         try {
-            await deleteMyArticle(article.id, session.sub);
+            await deleteMyArticle(article.id, currentSession.sub);
             setArticles((prev) => prev.map((a) => a.id === article.id ? {...a, status: "Removed"} : a));
-            setActionMessage({ text: "El articulo ha sido eliminado. Ahora es solo lectura para ti", type: "ok" });
+            setPopupMessage({ 
+                title: "Éxito", 
+                text: "El artículo ha sido eliminado correctamente.", 
+                type: "success" 
+            });
         } catch {
-            setActionMessage({ text: "No fue posible eliminar el articulo en este momento", type: "err"});
+            setPopupMessage({ 
+                title: "Error", 
+                text: "No fue posible eliminar el artículo en este momento.", 
+                type: "error" 
+            });
         } finally {
             setIsDeleting(false);
             setConfirmDeleteArticle(null);
@@ -147,7 +162,7 @@ export function MyArticlesPage() {
                 </div>
 
                 <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", marginBottom: "24px" }}>
-                    {(["todos", "publicados", "enRevision", "borradores", "rechazados", "eliminados"] as TabFilter[]).map((tab) => (
+                    {(["todos", "publicados", "enRevision", "borradores", "rechazados"] as TabFilter[]).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -164,12 +179,6 @@ export function MyArticlesPage() {
                     ))}
                 </div>
 
-                {actionMessage && (
-                    <div style={{ padding: "12px 16px", borderRadius: "8px", backgroundColor: actionMessage.type === "ok" ? "#dcfce7" : "#fef2f2", border: `1px solid ${actionMessage.type === "ok" ? "#bbf7d0" : "#fecaca"}`, color: actionMessage.type === "ok" ? "#15803d" : "#dc2626", fontSize: "14px", marginBottom: "16px" }}>
-                        {actionMessage.text}
-                    </div>
-                )}
-
                 {isLoading && <div style={{ textAlign: "center", padding: "60px", color: "#6b7280" }}>Cargando articulos...</div>}
                 {error && <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "16px", color: "#dc2626" }}>{error}</div>}
 
@@ -182,6 +191,7 @@ export function MyArticlesPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                     {displayed.map((article) => {
                         const isUnderReview = article.status === "UnderReview";
+                        const isPublished = article.status === "Published";
                         const isRemoved = article.status === "Removed";
                         const isEditable = !isUnderReview && !isRemoved;
                         return (
@@ -207,10 +217,19 @@ export function MyArticlesPage() {
                                             {getEsMxStatus(article.status)}
                                         </span>
                                     </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>Me gusta: {article.likes}</span>
-                                        <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>Comentarios: {article.comments}</span>
-                                    </div>
+                                    {isPublished && (
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>Me gusta: {article.likes}</span>
+                                            <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>Comentarios: {article.comments}</span>
+                                        </div>
+                                    )}
+                                    {isUnderReview && (
+                                        <div style={{ backgroundColor: "#fef3c7", padding: "5px", borderRadius: "10px" }}>
+                                            <p style={{ margin: 0, color: "#92400e", fontSize: "13px", fontWeight: "600", lineHeight: "1.5" }}>
+                                                No es posible editar un articulo mientras esta siendo revisado
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", flexShrink: 0 }}>
@@ -236,7 +255,7 @@ export function MyArticlesPage() {
                     <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
                         <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "12px" }}>Eliminar articulo</h2>
                         <p style={{ fontSize: "14px", color: "#374151", marginBottom: "12px" }}>
-                            ¿Estás seguro de que deseas eliminar el articulo <strong>{confirmDeleteArticle.title}</strong>?
+                            ¿Estás seguro de que deseas eliminar el articulo <strong>{confirmDeleteArticle.title}</strong>? Esta acción no se puede deshacer
                         </p>
                         <div style={{ display: "flex", gap: "10px" }}>
                             <button onClick={() => setConfirmDeleteArticle(null)} style={{ flex: 1, padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "14px" }}>
@@ -244,6 +263,31 @@ export function MyArticlesPage() {
                             </button>
                             <button onClick={() => handleDeleteArticle(confirmDeleteArticle)} disabled={isDeleting} style={{ flex: 1, padding: "10px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>
                                 {isDeleting ? "Eliminando..." : "Sí, eliminar articulo"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {popupMessage && (
+                <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: "16px" }}>
+                    <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "100%", maxWidth: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column", gap: "16px", boxSizing: "border-box" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, color: popupMessage.type === "error" ? "#dc2626" : (popupMessage.type === "success" ? "#15803d" : "#374151") }}>
+                            {popupMessage.title}
+                        </h2>
+                        <p style={{ fontSize: "14px", color: "#374151", margin: 0, lineHeight: "1.5" }}>
+                            {popupMessage.text}
+                        </p>
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+                            <button 
+                                onClick={() => {
+                                    const action = popupMessage.onClose;
+                                    setPopupMessage(null);
+                                    if (action) action();
+                                }} 
+                                style={{ padding: "10px 20px", backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", transition: "background-color 0.2s" }}
+                            >
+                                Aceptar
                             </button>
                         </div>
                     </div>

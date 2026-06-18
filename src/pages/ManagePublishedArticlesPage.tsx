@@ -28,10 +28,10 @@ const pageStyle: React.CSSProperties = {
 
 export function ManagePublishedArticlesPage() {
     const navigate = useNavigate();
+    
     const [articles, setArticles] = useState<PublishedArticle[]>([]);
     const [query, setQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
-    const [notice, setNotice] = useState("");
     const [status, setStatus] = useState("Cargando artículos publicados...");
 
     const [pageSize, setPageSize] = useState<number>(10);
@@ -39,6 +39,10 @@ export function ManagePublishedArticlesPage() {
     const [pageCount, setPageCount] = useState<number>(1);
     const [totalEntries, setTotalEntries] = useState<number>(0);
     const [pageInputValue, setPageInputValue] = useState<string>("1");
+
+    const [confirmDeleteArticle, setConfirmDeleteArticle] = useState<PublishedArticle | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [popupMessage, setPopupMessage] = useState<{ title: string; text: string; type: "success" | "error" | "info"; onClose?: () => void } | null>(null);
 
     useEffect(() => {
         setPageInputValue(currentPage.toString());
@@ -95,14 +99,33 @@ export function ManagePublishedArticlesPage() {
     const handlePrevPage = () => setCurrentPage((prev) => Math.max(1, prev - 1));
     const handleNextPage = () => setCurrentPage((prev) => Math.min(pageCount, prev + 1));
 
-    const handleDelete = async (article: PublishedArticle) => {
-        if (article.status === "Removed") return;
+    const executeDelete = async () => {
+        if (!confirmDeleteArticle || confirmDeleteArticle.status === "Removed") {
+            return;
+        }
 
-        await deletePublishedArticle(article.id);
-        setArticles((current) =>
-            current.map((item) => item.id === article.id ? { ...item, status: "Removed" } : item)
-        );
-        setNotice(`"${article.title}" se marcó como eliminado.`);
+        setIsDeleting(true);
+        try {
+            await deletePublishedArticle(confirmDeleteArticle.id);
+            setArticles((current) =>
+                current.map((item) => item.id === confirmDeleteArticle.id ? { ...item, status: "Removed" } : item)
+            );
+            setPopupMessage({
+                title: "Éxito",
+                text: `El artículo "${confirmDeleteArticle.title}" ha sido marcado como eliminado correctamente.`,
+                type: "success"
+            });
+        } catch (error) {
+            console.error(error);
+            setPopupMessage({
+                title: "Error",
+                text: "No se pudo eliminar el artículo en este momento. Por favor intentalo más tarde",
+                type: "error"
+            });
+        } finally {
+            setIsDeleting(false);
+            setConfirmDeleteArticle(null);
+        }
     };
 
     return (
@@ -132,18 +155,11 @@ export function ManagePublishedArticlesPage() {
                                 style={{ border: "1px solid #d1d5db", borderRadius: "6px", padding: "11px 14px", fontSize: "14px", minWidth: "150px", backgroundColor: "white" }}
                             >
                                 <option value="">Estado</option>
-                                <option value="published">Publicado</option>
-                                <option value="deleted">Eliminado</option>
+                                <option value="Published">Publicado</option>
+                                <option value="Removed">Eliminado</option>
                             </select>
                         </div>
                     </div>
-
-                    {notice && (
-                        <div style={{ padding: "12px 16px", borderRadius: "8px", backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", color: "#15803d", fontSize: "14px", marginBottom: "18px" }}>
-                            {notice}
-                        </div>
-                    )}
-
                     {status ? (
                         <div style={{ textAlign: "center", padding: "60px", color: "#6b7280", border: "1px dashed #e5e7eb", borderRadius: "10px" }}>
                             {status}
@@ -202,7 +218,7 @@ export function ManagePublishedArticlesPage() {
                                                         Ver
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(article)}
+                                                        onClick={() => setConfirmDeleteArticle(article)}
                                                         disabled={article.status === "Removed"}
                                                         style={{ border: "1px solid #ef4444", backgroundColor: "#fecaca", color: "#7f1d1d", borderRadius: "4px", padding: "5px 12px", cursor: article.status === "Removed" ? "not-allowed" : "pointer", fontWeight: "700", opacity: article.status === "Removed" ? 0.55 : 1 }}
                                                     >
@@ -296,6 +312,52 @@ export function ManagePublishedArticlesPage() {
                     </div>
                 </section>
             </main>
+
+            {confirmDeleteArticle && (
+                <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                    <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", boxSizing: "border-box" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "12px", marginTop: 0 }}>Eliminar artículo</h2>
+                        <p style={{ fontSize: "14px", color: "#374151", marginBottom: "20px", lineHeight: "1.5" }}>
+                            ¿Estás seguro de que deseas eliminar el artículo <strong>{confirmDeleteArticle.title}</strong> de la vista pública?. Esta acción no se puede deshacer
+                        </p>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                            <button onClick={() => setConfirmDeleteArticle(null)} style={{ flex: 1, padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "white", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>
+                                Cancelar
+                            </button>
+                            <button onClick={executeDelete} disabled={isDeleting} style={{ flex: 1, padding: "10px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>
+                                {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {popupMessage && (
+                <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: "16px" }}>
+                    <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "28px", width: "100%", maxWidth: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column", gap: "16px", boxSizing: "border-box" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, color: popupMessage.type === "error" ? "#dc2626" : (popupMessage.type === "success" ? "#15803d" : "#374151") }}>
+                            {popupMessage.title}
+                        </h2>
+                        <p style={{ fontSize: "14px", color: "#374151", margin: 0, lineHeight: "1.5" }}>
+                            {popupMessage.text}
+                        </p>
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+                            <button 
+                                onClick={() => {
+                                    const action = popupMessage.onClose;
+                                    setPopupMessage(null);
+                                    if (action) {
+                                        action();
+                                    }
+                                }} 
+                                style={{ padding: "10px 20px", backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", transition: "background-color 0.2s" }}
+                            >
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

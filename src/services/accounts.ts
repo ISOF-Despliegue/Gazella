@@ -89,3 +89,7 @@ export function getLocalProfile(email?: string): EditableAccountProfile | null {
         return null;
     }
 }
+
+export function clearLocalProfile() {
+    localStorage.removeItem(LOCAL_PROFILE_KEY);
+}

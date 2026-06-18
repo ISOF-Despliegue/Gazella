@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getCurrentSession } from '../services/auth';
 
 const PUBLIC_PATHS = ['/', '/login', '/registro', '/verificar', '/auth/callback', '/home'];
@@ -16,11 +16,11 @@ function isPublicPath(path: string) {
 }
 
 function getRouteStack() {
-    if (typeof window === 'undefined') {
+    if (globalThis.window === undefined) {
         return [] as string[];
     }
 
-    const raw = window.sessionStorage.getItem(ROUTE_STACK_KEY);
+    const raw = globalThis.sessionStorage.getItem(ROUTE_STACK_KEY);
     if (!raw) {
         return [] as string[];
     }
@@ -38,16 +38,15 @@ function getRouteStack() {
 }
 
 function setRouteStack(stack: string[]) {
-    if (typeof window === 'undefined') {
+    if (globalThis.window === undefined) {
         return;
     }
 
-    window.sessionStorage.setItem(ROUTE_STACK_KEY, JSON.stringify(stack));
+    globalThis.sessionStorage.setItem(ROUTE_STACK_KEY, JSON.stringify(stack));
 }
 
-export function BackButton({ fallbackPath = '/dashboard', label = 'Regresar', preferFallback = false }: BackButtonProps) {
+export function BackButton({ fallbackPath = '/dashboard', label = 'Regresar', preferFallback = false }: Readonly<BackButtonProps>) {
     const navigate = useNavigate();
-    const location = useLocation();
 
     const handleBack = () => {
         const session = getCurrentSession();

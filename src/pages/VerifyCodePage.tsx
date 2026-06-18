@@ -17,7 +17,7 @@ export function VerifyCodePage() {
     const initialMode = locationState.mode || (sessionStorage.getItem(PENDING_MODE_KEY) as VerifyMode) || 'verification';
 
     const [email, setEmail] = useState(initialEmail);
-    const [mode, setMode] = useState<VerifyMode>(initialMode);
+    const [mode] = useState<VerifyMode>(initialMode);
     const [code, setCode] = useState(['', '', '', '', '', '']);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');

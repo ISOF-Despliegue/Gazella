@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginWithPassword } from '../services/auth';
 import { assets } from '../assets/assets';
+import { getMyAccount, saveLocalProfile } from '../services/accounts';
 
 export function LoginPage() {
     const [email, setEmail] = useState('');
@@ -16,6 +17,10 @@ export function LoginPage() {
 
         try {
             await loginWithPassword(email.trim(), password);
+
+            const currentProfile = await getMyAccount();
+            saveLocalProfile(currentProfile);
+            
             navigate('/dashboard');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'No se pudo iniciar sesion.';

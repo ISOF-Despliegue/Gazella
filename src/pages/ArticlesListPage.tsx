@@ -335,7 +335,7 @@ export function ArticlesListPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflowY: 'auto', paddingRight: '8px', marginBottom: '16px' }}>
                         {articles.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                                No se encontraron artículos con los criterios seleccionados.
+                                No se encontraron artículos con los criterios seleccionados. Intente ampliar la búsqueda
                             </div>
                         ) : articles.map((article) => (
                             <div

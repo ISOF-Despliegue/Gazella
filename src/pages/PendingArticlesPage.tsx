@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { type ArticlePendingReview, getPendingReview } from "../services/articles/drafts";
 import { Header } from "../components/Header";
 
@@ -18,11 +18,11 @@ function formatDate(value: string) {
 
 export function PendingArticlesPage() {
     const navigate = useNavigate();
-    const location = useLocation();
-    const notice = (location.state as { notice?: string } | null)?.notice;
+
     const [articles, setArticles] = useState<ArticlePendingReview[]>([]);
     const [status, setStatus] = useState("Cargando artículos pendientes...");
     const [query, setQuery] = useState("");
+    
     const [pageSize, setPageSize] = useState<number>(10);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageCount, setPageCount] = useState<number>(1);
@@ -92,12 +92,6 @@ export function PendingArticlesPage() {
             <Header/>
             <main style={{ maxWidth: "960px", margin: "32px auto", padding: "0 24px" }}>
                 <section style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "28px" }}>
-                    {notice && (
-                        <div style={{ padding: "12px 16px", borderRadius: "8px", backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", color: "#15803d", fontSize: "14px", marginBottom: "18px" }}>
-                            {notice}
-                        </div>
-                    )}
-
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "18px", marginBottom: "24px" }}>
                         <div>
                             <h2 style={{ fontSize: "26px", fontWeight: "bold", marginBottom: "6px" }}>

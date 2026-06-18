@@ -128,6 +128,7 @@ export function getCurrentSession(): AuthSession | null {
 export function logout() {
     localStorage.removeItem("gazella_access_token");
     localStorage.removeItem("gazella_access_token_expires_at");
+    localStorage.removeItem("gazella_local_profile")
 }
 
 export function hasAnyRole(session: AuthSession | null, allowedRoles: string[]) {

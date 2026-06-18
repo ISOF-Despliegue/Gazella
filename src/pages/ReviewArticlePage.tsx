@@ -26,6 +26,7 @@ export function ReviewArticlePage() {
     const [rejectionReason, setRejectionReason] = useState("");
     const [status, setStatus] = useState("Cargando artículo...");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [popupMessage, setPopupMessage] = useState<{ title: string; text: string; type: "success" | "error" | "info"; onClose?: () => void } | null>(null);
 
     useEffect(() => {
         getArticle(articleId)
@@ -42,12 +43,19 @@ export function ReviewArticlePage() {
         setIsSubmitting(true);
         try {
             await approveArticle(article.id);
-            navigate("/editor/articulos", {
-                replace: true,
-                state: { notice: "Artículo aprobado correctamente." },
+            setPopupMessage({
+                title: "Éxito",
+                text: "El artículo ha sido aprobado y publicado correctamente.",
+                type: "success",
+                onClose: () => navigate("/editor/articulos", { replace: true })
             });
         } catch {
-            setStatus("No se pudo aprobar el artículo.");
+            setPopupMessage({
+                title: "Error",
+                text: "No se pudo aprobar el artículo en este momento. Por favor intenta más tarde.",
+                type: "error"
+            });
+        } finally {
             setIsSubmitting(false);
         }
     };
@@ -55,19 +63,30 @@ export function ReviewArticlePage() {
     const handleReject = async () => {
         if (!article || isSubmitting) return;
         if (!rejectionReason.trim()) {
-            setStatus("Escribe el motivo del rechazo antes de continuar.");
+            setPopupMessage({
+                title: "Faltan datos",
+                text: "Debes proporcionar el motivo del rechazo antes de continuar.",
+                type: "error"
+            });
             return;
         }
 
         setIsSubmitting(true);
         try {
             await rejectArticle(article.id, { rejectionReason: rejectionReason.trim() });
-            navigate("/editor/articulos", {
-                replace: true,
-                state: { notice: "Artículo rechazado correctamente." },
+            setPopupMessage({
+                title: "Éxito",
+                text: "El artículo ha sido devuelto al autor con las correcciones.",
+                type: "success",
+                onClose: () => navigate("/editor/articulos", { replace: true })
             });
         } catch {
-            setStatus("No se pudo rechazar el artículo.");
+            setPopupMessage({
+                title: "Error",
+                text: "No se pudo rechazar el artículo en este momento. Por favor intenta más tarde.",
+                type: "error"
+            });
+        } finally {
             setIsSubmitting(false);
         }
     };
@@ -75,24 +94,16 @@ export function ReviewArticlePage() {
     return (
         <div className="min-h-screen bg-gray-100">
             <Header />
-            <main className="mx-auto w-full max-w-7xl p-5 sm:p-8 lg:p-10">
-                <div className="mb-6">
-                    <button
-                        onClick={() => navigate("/editor/articulos")}
-                        className="text-sm font-semibold text-green-800 hover:underline"
-                    >
-                        ← Volver a pendientes
-                    </button>
-                </div>
-
+            <main className="mx-auto w-full max-w-7xl" style={{ padding: "2rem 1.5rem", boxSizing: "border-box" }}>
                 {status && !article ? (
-                    <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center text-gray-500 shadow-sm">
+                    <div className="rounded-2xl border border-gray-200 bg-white text-center text-gray-500 shadow-sm" style={{ padding: "3rem", boxSizing: "border-box" }}>
                         {status}
                     </div>
                 ) : article && (
                     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-                        <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                            <div className="border-b border-gray-200 p-6 sm:p-8">
+                        
+                        <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" style={{ padding: "1.75rem", boxSizing: "border-box" }}>
+                            <div className="border-b border-gray-200" style={{ paddingBottom: "1.5rem", marginBottom: "1.5rem" }}>
                                 <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-green-700">
                                     Revisión de artículo pendiente
                                 </p>
@@ -104,7 +115,7 @@ export function ReviewArticlePage() {
                                 </div>
                             </div>
 
-                            <div className="p-6 sm:p-8">
+                            <div>
                                 <div className="mb-8 flex h-64 items-center justify-center overflow-hidden rounded-xl bg-green-50 sm:h-80">
                                     <SafeImage
                                         src={article.coverUri}
@@ -121,7 +132,7 @@ export function ReviewArticlePage() {
                         </article>
 
                         <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
-                            <section className="rounded-2xl border border-green-200 bg-white p-6 shadow-sm">
+                            <section className="rounded-2xl border border-green-200 bg-white shadow-sm" style={{ padding: "1.5rem", boxSizing: "border-box" }}>
                                 <h2 className="text-lg font-bold text-gray-900">Aprobar artículo</h2>
                                 <p className="mt-2 text-sm leading-6 text-gray-600">
                                     El artículo se publicará y su autor recibirá una notificación.
@@ -134,8 +145,8 @@ export function ReviewArticlePage() {
                                     {isSubmitting ? "Procesando..." : "Aprobar y publicar"}
                                 </button>
                             </section>
-
-                            <section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
+                            <div style={{ padding: "0.5rem"}} />
+                            <section className="rounded-2xl border border-red-200 bg-white shadow-sm" style={{ padding: "1.5rem", boxSizing: "border-box" }}>
                                 <h2 className="text-lg font-bold text-gray-900">Rechazar artículo</h2>
                                 <p className="mt-2 text-sm leading-6 text-gray-600">
                                     Explica qué debe corregir el autor antes de enviarlo nuevamente.
@@ -149,6 +160,7 @@ export function ReviewArticlePage() {
                                     onChange={(event) => setRejectionReason(event.target.value)}
                                     placeholder="Describe de forma clara los cambios necesarios..."
                                     className="mt-2 min-h-36 w-full resize-y rounded-lg border border-gray-300 p-3 text-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                                    style={{ boxSizing: "border-box" }}
                                 />
                                 <button
                                     onClick={handleReject}
@@ -158,16 +170,34 @@ export function ReviewArticlePage() {
                                     {isSubmitting ? "Procesando..." : "Rechazar"}
                                 </button>
                             </section>
-
-                            {status && (
-                                <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                                    {status}
-                                </p>
-                            )}
                         </aside>
                     </div>
                 )}
             </main>
+            {popupMessage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ padding: "1rem" }}>
+                    <div className="flex w-full max-w-md flex-col gap-4 rounded-xl bg-white shadow-2xl" style={{ padding: "1.75rem", boxSizing: "border-box" }}>
+                        <h2 className={`m-0 text-lg font-bold ${popupMessage.type === 'error' ? 'text-red-600' : popupMessage.type === 'success' ? 'text-green-700' : 'text-gray-800'}`}>
+                            {popupMessage.title}
+                        </h2>
+                        <p className="m-0 text-sm leading-relaxed text-gray-700">
+                            {popupMessage.text}
+                        </p>
+                        <div className="mt-2 flex justify-end">
+                            <button
+                                onClick={() => {
+                                    const action = popupMessage.onClose;
+                                    setPopupMessage(null);
+                                    if (action) action();
+                                }}
+                                className="rounded-md border border-gray-300 bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-200"
+                            >
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BackButton } from "../components/BackButton";
+import { EngagementRing } from "../components/EngagementRing"
 import { assets } from "../assets/assets";
 import { getMyAuthorStats } from "../services/articles/articles";
 import type { AuthorStats } from "../types/article";
@@ -23,7 +25,7 @@ function dateFormat(datetime: string) {
       second: '2-digit',
       hour12: true
     }).format(date);
-  } catch (error) {
+  } catch {
     return fallback;
   }
 }
@@ -58,24 +60,33 @@ const cardStyle: React.CSSProperties = {
 };
 
 export function AuthorStatsPage() {
+    const navigate = useNavigate();
+
     const [stats, setStats] = useState<AuthorStats | null>(null);
-    const [status, setStatus] = useState("Cargando estadísticas...");
+    const [loadingStatus, setLoadingStatus] = useState("Cargando estadísticas...");
 
     useEffect(() => {
         getMyAuthorStats()
             .then((data) => {
                 setStats(data);
-                setStatus("");
+                setLoadingStatus("");
             })
-            .catch(() => setStatus("No se pudieron cargar tus estadísticas."));
+            .catch(() => setLoadingStatus("No se pudieron cargar tus estadísticas."));
     }, []);
 
+    const sortedArticles = useMemo(() => {
+        if (!stats?.topArticles) {
+            return [];
+        }
+        return [...stats.topArticles].sort((a, b) => b.likesCount - a.likesCount);
+    }, [stats?.topArticles]);
+
     const maxLikes = useMemo(
-        () => Math.max(1, ...(stats?.topArticles.map((article) => article.likesCount) ?? [1])),
-        [stats],
+        () => Math.max(1, ...(sortedArticles.map((article) => article.likesCount))),
+        [sortedArticles],
     );
 
-    const mostPopular = stats?.topArticles[0];
+    const mostPopular = sortedArticles[0];
     const recentActivity = stats ? getRecentActivityText(stats) : [];
 
     return (
@@ -98,7 +109,29 @@ export function AuthorStatsPage() {
 
                     {!stats ? (
                         <div style={{ textAlign: "center", padding: "60px", color: "#6b7280" }}>
-                            {status}
+                            {loadingStatus}
+                        </div>
+                    ) : stats.publishedArticlesCount === 0 ? (
+                        <div style={{ textAlign: "center", padding: "80px 20px" }}>
+                            <p style={{ fontSize: "16px", color: "#4b5563", marginBottom: "24px", lineHeight: "1.5" }}>
+                                Aún no tienes artículos publicados. Las estadísticas estarán disponibles cuando publiques tu primer artículo.
+                            </p>
+                            <button
+                                onClick={() => navigate("/nuevo-articulo")}
+                                style={{
+                                    padding: "12px 24px",
+                                    backgroundColor: "#16a34a",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    fontSize: "15px",
+                                    fontWeight: "600",
+                                    transition: "background-color 0.2s"
+                                }}
+                            >
+                                Escribir nuevo articulo
+                            </button>
                         </div>
                     ) : (
                         <>
@@ -124,12 +157,13 @@ export function AuthorStatsPage() {
                                     Me Gusta por Artículo
                                 </h3>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                                    {stats.topArticles.map((article) => (
+                                    {sortedArticles.map((article) => (
                                         <div
                                             key={article.id}
-                                            style={{ display: "grid", gridTemplateColumns: "240px 1fr 40px", alignItems: "center", gap: "14px" }}
+                                            style={{ display: "grid", cursor: 'pointer', gridTemplateColumns: "240px 1fr 40px", alignItems: "center", gap: "14px" }}
+                                            onClick={() => navigate("/mis-articulos")}
                                         >
-                                            <span style={{ fontSize: "13px", color: "#374151" }}>{article.title}</span>
+                                            <span style={{ fontSize: "13px", color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{article.title}</span>
                                             <div style={{ height: "18px", border: "1px solid #d1d5db", borderRadius: "3px", backgroundColor: "#f9fafb", overflow: "hidden" }}>
                                                 <div
                                                     style={{
@@ -148,7 +182,7 @@ export function AuthorStatsPage() {
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "18px", marginTop: "26px" }}>
                                 <article style={{ ...cardStyle, padding: "22px", minHeight: "130px" }}>
                                     <h3 style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "28px" }}>Artículo más popular</h3>
-                                    <p style={{ fontSize: "13px", color: "#374151" }}>{mostPopular?.title ?? "Sin artículos"}</p>
+                                    <p onClick={() => navigate(`/articulos/${mostPopular?.id}`)} style={{ cursor: "pointer", fontSize: "13px", color: "#374151", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{mostPopular?.title ?? "Sin artículos"}</p>
                                     {mostPopular && (
                                         <p style={{ fontSize: "13px", fontWeight: "700", marginTop: "8px" }}>
                                             {mostPopular.likesCount} me gusta · {mostPopular.commentsCount} comentarios
@@ -163,10 +197,14 @@ export function AuthorStatsPage() {
                                     ))}
                                 </article>
 
-                                <article style={{ ...cardStyle, padding: "22px", minHeight: "130px" }}>
-                                    <h3 style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "24px" }}>Tasa de interacción</h3>
-                                    <p style={{ fontSize: "18px", fontWeight: "800", marginBottom: "10px" }}>{stats.engagementRate.toFixed(1)}%</p>
-                                    <p style={{ fontSize: "13px", color: "#374151" }}>
+                                <article style={{ ...cardStyle, padding: "22px", minHeight: "130px", display: "flex", flexDirection: "column" }}>
+                                    <h3 style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "15px" }}>Tasa de interacción</h3>
+                                    
+                                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <EngagementRing rate={stats.engagementRate} size={110} strokeWidth={10} />
+                                    </div>
+
+                                    <p style={{ fontSize: "12px", color: "#6b7280", textAlign: "center", marginTop: "15px", borderTop: "1px solid #f3f4f6", paddingTop: "8px" }}>
                                         promedio (likes + comentarios / lecturas)
                                     </p>
                                 </article>
