@@ -217,6 +217,7 @@ export function RegisterPage() {
 
                 {/* Botón registrarse */}
                 <button
+                    data-testid="btn-registrarme"
                     onClick={handleRegister}
                     disabled={isSubmitting}
                     style={{
