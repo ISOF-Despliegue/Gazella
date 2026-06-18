@@ -18,7 +18,7 @@ function getFullName(profile: EditableAccountProfile | null, session: AuthSessio
 
 export function Header() {
     const navigate = useNavigate();
-        const [session, setSession] = useState<AuthSession | null>(null);
+        const [session, setSession] = useState<AuthSession | null>(getCurrentSession());
         const [profile, setProfile] = useState<EditableAccountProfile | null>(null);
     
         useEffect(() => {
@@ -40,7 +40,9 @@ export function Header() {
 
 
     const displayName = useMemo(() => getFullName(profile, session), [profile, session]);
-        const roleLabel = profile?.role ?? session?.roles[0] ?? 'sin rol asignado';
+        console.log('session roles:', session?.roles);
+        console.log('profile role:', profile?.role);
+        const roleLabel = session?.roles[0] ?? profile?.role ?? 'sin rol asignado';
         const initials = displayName
             .split(' ')
             .filter(Boolean)
@@ -48,14 +50,16 @@ export function Header() {
             .map((part) => part[0]?.toUpperCase())
             .join('') || 'U';
     
-        const handleLogout = () => {
-            logout();
+        const handleLogout = async () => {
+            await logout();
             navigate('/login');
         };
 
+
     return (
         <div>
-            <nav style={{
+                {(() => { console.log('session roles:', session?.roles, 'profile role:', profile?.role); return null; })()}
+                <nav style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',

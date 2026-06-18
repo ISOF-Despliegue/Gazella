@@ -125,10 +125,23 @@ export function getCurrentSession(): AuthSession | null {
     };
 }
 
-export function logout() {
+export async function logout() {
     localStorage.removeItem("gazella_access_token");
     localStorage.removeItem("gazella_access_token_expires_at");
     localStorage.removeItem("gazella_local_profile")
+    
+    try {
+        const idpLogoutUrl = `${globalThis.location.origin}/oidc/end_session`;
+        
+        await fetch(idpLogoutUrl, {
+            method: "GET",
+            credentials: "include",
+        }).catch(() => {
+            console.log("IdP logout completed or not available");
+        });
+    } catch (error) {
+        console.log("IdP logout attempt completed", error);
+    }
 }
 
 export function hasAnyRole(session: AuthSession | null, allowedRoles: string[]) {
@@ -139,7 +152,7 @@ export function hasAnyRole(session: AuthSession | null, allowedRoles: string[]) 
 }
 
 export async function register(input: RegisterInput) {
-    return apiRequest<{ message: string }>("/api/auth/registration", {
+    return apiRequest<{ message: string; code?: string }>("/api/auth/registration", {
         method: "POST",
         skipAuth: true,
         body: JSON.stringify(input),
@@ -260,8 +273,12 @@ export async function loginWithPassword(email: string, password: string): Promis
         );
 
         if (!loginResponse.ok && loginResponse.status !== 303) {
-            const errorData = await loginResponse.json().catch(() => ({})) as { message?: string };
-            throw new Error(errorData.message ?? "Error al iniciar sesión");
+            const errorData = await loginResponse.json().catch(() => ({})) as { message?: string; code?: string };
+            // Include the code in the error message so the LoginPage can detect NOT_VERIFIED
+            const message = errorData.code === 'NOT_VERIFIED' 
+                ? 'Only email-verified users can log-in and this account is not verified'
+                : (errorData.message ?? "Error al iniciar sesión");
+            throw new Error(message);
         }
 
         if (loginResponse.url.includes("/auth/callback")) {

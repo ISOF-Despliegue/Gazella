@@ -16,7 +16,6 @@ function formatDate(value?: string): string {
 
 export function MyProjectsPage() {
     const navigate = useNavigate();
-    const session = getCurrentSession();
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +34,7 @@ export function MyProjectsPage() {
     const [isCancelling, setIsCancelling] = useState(false);
 
     useEffect(() => {
+        const session = getCurrentSession();
         if (!session) { navigate("/login"); return; }
         const isOrganizer = session.roles?.includes("organizer");
         if (!isOrganizer) { navigate("/dashboard"); return; }

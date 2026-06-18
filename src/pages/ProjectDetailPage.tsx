@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getProjectById, enrollInProject, cancelEnrollment, getMyEnrollments } from "../services/projects";
 import { type Project } from "../types/project";
 import { Header } from "../components/Header";
-import { getCurrentSession } from "../services/auth";
+import { getCurrentSession, type AuthSession } from "../services/auth";
 
 type EnrollmentStatus = "none" | "confirmed" | "cancelled";
 
 export function ProjectDetailPage() {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
-    const session = getCurrentSession();
+    const [searchParams] = useSearchParams();
 
     const [project, setProject] = useState<Project | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -20,8 +20,11 @@ export function ProjectDetailPage() {
     const [actionMessage, setActionMessage] = useState<string | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [session, setSession] = useState<AuthSession | null>(null);
 
     useEffect(() => {
+        const session = getCurrentSession();
+        setSession(session);
         if (!projectId) return;
         setIsLoading(true);
         setError(null);
@@ -32,6 +35,9 @@ export function ProjectDetailPage() {
         ])
             .then(([proj, enrollments]) => {
                 setProject(proj);
+                if (searchParams.get("inscribirse") === "true" && proj.status === "Active" && proj.volunteersEnrolled < proj.volunteersMax) {
+                    setShowConfirmDialog(true);
+                }
                 const match = enrollments.find((e) => e.project_id === projectId);
                 if (match) {
                     setEnrollmentStatus(match.enrollment_status === "Confirmed" ? "confirmed" : "cancelled");

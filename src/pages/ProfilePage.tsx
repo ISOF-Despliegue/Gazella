@@ -62,7 +62,7 @@ export function ProfilePage() {
     }, [navigate]);
 
     const displayName = useMemo(() => getFullName(profile, session), [profile, session]);
-    const roleLabel = profile?.role ?? session?.roles[0] ?? 'volunteer';
+    const roleLabel = session?.roles[0] ?? profile?.role ?? 'sin rol asignado';
     const initials = displayName
         .split(' ')
         .filter(Boolean)

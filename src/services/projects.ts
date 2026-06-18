@@ -59,8 +59,8 @@ export async function getProjects(params: GetProjectsParams = {}): Promise<Proje
 }
 
 export async function getUpcomingProjects(): Promise<Project[]> {
-    const result = await getProjects({ pageIndex: 0, pageSize: 3, orderBy: "soonest" });
-    return result.mappedProjects;
+    const result = await getProjects({ pageIndex: 0, pageSize: 5, orderBy: "soonest" });
+    return result.mappedProjects.slice(0, 3);
 }
 
 export async function getProjectById(projectId: string): Promise<Project> {

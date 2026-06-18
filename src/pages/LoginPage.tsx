@@ -1,18 +1,29 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { loginWithPassword } from '../services/auth';
 import { assets } from '../assets/assets';
 import { getMyAccount, saveLocalProfile } from '../services/accounts';
 
 export function LoginPage() {
-    const [email, setEmail] = useState('');
+    const location = useLocation();
+    const locationState = (location.state as { verified?: boolean; email?: string; recovered?: boolean } | null) ?? {};
+    const initialVerifiedEmail = locationState.verified ? locationState.email : '';
+    const [email, setEmail] = useState(initialVerifiedEmail || '');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [notVerifiedEmail, setNotVerifiedEmail] = useState<string | null>(null);
+    const [isNetworkError, setIsNetworkError] = useState(false);
+    const [successMessage, setSuccessMessage] = useState<string | null>(
+        locationState.verified ? 'Correo verificado correctamente. Ahora puedes iniciar sesión.' : 
+        locationState.recovered ? 'Contraseña actualizada correctamente. Ahora puedes iniciar sesión.' : null
+    );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async () => {
         setError('');
+        setNotVerifiedEmail(null);
+        setIsNetworkError(false);
         setIsSubmitting(true);
 
         try {
@@ -24,7 +35,19 @@ export function LoginPage() {
             navigate('/dashboard');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'No se pudo iniciar sesion.';
-            setError(message);
+            
+            // Check if it's a network error (TypeError: Failed to fetch)
+            if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('Network')) {
+                setIsNetworkError(true);
+                setError('No hay conexión con el servidor. Por favor intenta más tarde.');
+            } else {
+                setError(message);
+            }
+
+            // Check if the error message indicates the account is not verified
+            if (message.toLowerCase().includes('not verified') || message.includes('no está verificada')) {
+                setNotVerifiedEmail(email.trim());
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -124,10 +147,40 @@ export function LoginPage() {
                     {isSubmitting ? 'Ingresando...' : 'Ingresar'}
                 </button>
 
+                {successMessage && (
+                    <p style={{ color: '#166534', fontSize: '14px', textAlign: 'center', margin: 0, padding: '8px', backgroundColor: '#f0fdf4', borderRadius: '6px' }}>
+                        {successMessage}
+                    </p>
+                )}
+
                 {error && (
                     <p style={{ color: '#b91c1c', fontSize: '14px', textAlign: 'center', margin: 0 }}>
                         {error}
                     </p>
+                )}
+
+                {/* "Not verified" banner */}
+                {notVerifiedEmail && (
+                    <div style={{ textAlign: 'center', marginTop: '4px', marginBottom: '4px', padding: '12px', backgroundColor: '#fff7ed', borderRadius: '6px', border: '1px solid #fed7aa' }}>
+                        <p style={{ color: '#9a3412', fontSize: '14px', margin: '0 0 8px 0' }}>
+                            Esta cuenta aún no ha sido verificada.
+                        </p>
+                        <button
+                            onClick={() => navigate('/verificar', { state: { email: notVerifiedEmail, mode: 'verification' as const } })}
+                            style={{
+                                background: '#ea580c',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '8px 16px',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Verificar correo ahora
+                        </button>
+                    </div>
                 )}
 
                 {/* Links */}

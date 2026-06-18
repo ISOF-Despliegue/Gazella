@@ -365,7 +365,16 @@ export function ArticlesListPage() {
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{article.title}</h3>
                                     <p style={{ fontSize: '13px', color: '#374151', marginBottom: '2px' }}>
-                                        <strong>Autor:</strong> {article.authorName}
+                                        <strong>Autor:</strong>{' '}
+                                        <span
+                                            style={{ color: '#2563eb', cursor: 'pointer', fontWeight: 'bold' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/perfil/${article.authorId}`);
+                                            }}
+                                        >
+                                            {article.authorName}
+                                        </span>
                                     </p>
                                     <p style={{ fontSize: '13px', color: '#374151', marginBottom: '2px' }}>
                                         <strong>Categoría:</strong> {article.categoryName}

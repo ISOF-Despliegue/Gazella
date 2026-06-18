@@ -39,7 +39,7 @@ export function ProjectCard({ project, onEnroll }: ProjectCardProps) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                     <p style={{ fontSize: '12px', color: '#6b7280' }}>Voluntarios: {project.volunteersEnrolled} / {project.volunteersMax}</p>
                     <button
-                        onClick={() => onEnroll?.(project)}
+                        onClick={(e) => { e.stopPropagation(); onEnroll?.(project); }}
                         style={{
                             fontSize: '12px',
                             padding: '4px 12px',

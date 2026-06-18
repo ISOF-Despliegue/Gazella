@@ -64,7 +64,7 @@ export function DashboardPage() {
     }, [navigate]);
 
     const displayName = useMemo(() => getFullName(profile, session), [profile, session]);
-    const roleLabel = profile?.role ?? session?.roles[0] ?? 'sin rol asignado';
+    const roleLabel = session?.roles[0] ?? profile?.role ?? 'sin rol asignado';
     const initials = displayName
         .split(' ')
         .filter(Boolean)
@@ -72,10 +72,11 @@ export function DashboardPage() {
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'U';
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
+
 
     const isOrganizer = session?.roles?.includes('organizer');
     const isEditor = session?.roles?.some((role) => ['editor', 'moderator'].includes(role.toLowerCase()));
@@ -198,6 +199,9 @@ export function DashboardPage() {
                         isOrganizer
                             ? { label: 'Mis proyectos', path: '/mis-proyectos' }
                             : { label: 'Mis proyectos', path: '/mis-inscripciones' },
+                        ...(isOrganizer ? [
+                            { label: 'Estadísticas de proyectos', path: '/mis-proyectos/estadisticas' },
+                        ] : []),
                         ...(isEditor ? [
                             { label: 'Pendientes de revision', path: '/editor/articulos' },
                             { label: 'Gestionar publicados', path: '/editor/articulos/publicados' },

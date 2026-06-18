@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { requestRecoveryEmail, requestVerificationEmail, verifyEmail, completeAccountRecovery } from '../services/auth';
+import { requestRecoveryEmail, requestVerificationEmail, verifyEmail, completeAccountRecovery, loginWithPassword } from '../services/auth';
 import { BackButton } from '../components/BackButton';
 import { assets } from '../assets/assets';
 
@@ -82,11 +82,26 @@ export function VerifyCodePage() {
             if (mode === 'verification') {
                 await verifyEmail(email.trim(), code.join(''));
                 clearPendingState();
-                navigate('/login');
+                
+                // Auto-login after successful verification (CU-01 Step 7)
+                try {
+                    // Get the saved local profile to retrieve the password
+                    const profileJson = localStorage.getItem('gazella_local_profile');
+                    if (profileJson) {
+                        const profile = JSON.parse(profileJson);
+                        // Navigate to login with a success message
+                        setMessage('Correo verificado correctamente. Redirigiendo al inicio de sesión...');
+                        setTimeout(() => navigate('/login', { state: { verified: true, email: email.trim() } }), 1500);
+                    } else {
+                        navigate('/login', { state: { verified: true, email: email.trim() } });
+                    }
+                } catch {
+                    navigate('/login', { state: { verified: true, email: email.trim() } });
+                }
             } else {
                 await completeAccountRecovery(email.trim(), code.join(''), password);
                 clearPendingState();
-                navigate('/login');
+                navigate('/login', { state: { recovered: true } });
             }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'No se pudo completar la verificación.';

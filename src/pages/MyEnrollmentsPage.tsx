@@ -16,7 +16,6 @@ function formatDate(value?: string): string {
 
 export function MyEnrollmentsPage() {
     const navigate = useNavigate();
-    const session = getCurrentSession();
 
     const [enrollments, setEnrollments] = useState<EnrollmentApiEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +26,7 @@ export function MyEnrollmentsPage() {
     const [actionMessage, setActionMessage] = useState<string | null>(null);
 
     useEffect(() => {
+        const session = getCurrentSession();
         if (!session) { navigate("/login"); return; }
         setIsLoading(true);
         getMyEnrollments()
@@ -146,8 +146,12 @@ export function MyEnrollmentsPage() {
                                 key={enrollment.project_id}
                                 style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "18px 20px", display: "flex", alignItems: "center", gap: "16px" }}
                             >
-                                <div style={{ width: "72px", height: "56px", borderRadius: "8px", backgroundColor: "#d1fae5", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <span style={{ fontSize: "28px" }}>🌿</span>
+                                <div style={{ width: "72px", height: "56px", borderRadius: "8px", backgroundColor: "#d1fae5", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    {enrollment.cover_uri ? (
+                                        <img src={enrollment.cover_uri} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                    ) : (
+                                        <span style={{ fontSize: "28px" }}>🌿</span>
+                                    )}
                                 </div>
 
                                 <div style={{ flex: 1 }}>
