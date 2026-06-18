@@ -47,3 +47,6 @@ RELEASE.md
 *.njsproj
 *.sln
 *.sw?
+
+playwright-report/
+test-results/
