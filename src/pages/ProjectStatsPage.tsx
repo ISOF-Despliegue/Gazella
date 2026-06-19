@@ -34,9 +34,7 @@ export function ProjectStatsPage() {
         const session = getCurrentSession();
         if (!session) { navigate("/login"); return; }
         if (!session.roles?.includes("organizer")) { navigate("/dashboard"); return; }
-
-        const organizerId = session.sub;
-
+        
         setIsLoading(true);
         getMyProjects()
             .then(async (projects) => {

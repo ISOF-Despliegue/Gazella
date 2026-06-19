@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getFollowersFor, getProfileById, followAccount, unfollowAccount, type PublicAccountProfile } from '../services/accounts';
-import { getCurrentSession, type AuthSession } from '../services/auth';
+import { getCurrentSession } from '../services/auth';
 import { searchArticles } from '../services/articles/articles';
 import { Header } from '../components/Header';
 import { SafeImage } from '../components/SafeImage';
@@ -53,7 +53,7 @@ export function UserProfilePage() {
                 if (fetchedProfile?.id) {
                     const followers = await getFollowersFor(fetchedProfile.id).catch(() => [] as Array<{ follower: PublicAccountProfile }>);
                     setFollowerCount(followers.length);
-                    setIsFollowing(!!followers.find((entry) => entry.follower.id === session?.sub));
+                    setIsFollowing(!!followers.some((entry) => entry.follower.id === session?.sub));
                 }
 
                 // Fetch articles by this author
@@ -80,13 +80,6 @@ export function UserProfilePage() {
             .filter(Boolean)
             .join(' ');
     }, [profile]);
-
-    const initials = displayName
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('') || 'U';
 
     const handleFollowToggle = async () => {
         if (!session || !profile?.id) {
