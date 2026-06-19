@@ -28,10 +28,12 @@ export function LoginPage() {
 
         try {
             await loginWithPassword(email.trim(), password);
-
-            const currentProfile = await getMyAccount();
-            saveLocalProfile(currentProfile);
-            
+            try {
+                const currentProfile = await getMyAccount();
+                saveLocalProfile(currentProfile);
+            } catch {
+                // account-service no disponible, continuar de todas formas
+            }
             navigate('/dashboard');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'No se pudo iniciar sesion.';

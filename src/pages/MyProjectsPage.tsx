@@ -232,7 +232,9 @@ export function MyProjectsPage() {
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: "12px 16px" }}>
-                                                    <button style={{ padding: "4px 10px", border: "1px solid #d1d5db", borderRadius: "4px", backgroundColor: "white", cursor: "pointer", fontSize: "12px" }}>
+                                                    <button 
+                                                        onClick={() => navigate(`/usuario/${v.volunteer_id}`)}
+                                                        style={{ padding: "4px 10px", border: "1px solid #d1d5db", borderRadius: "4px", backgroundColor: "white", cursor: "pointer", fontSize: "12px" }}>
                                                         Ver Perfil
                                                     </button>
                                                 </td>

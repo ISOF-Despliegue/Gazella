@@ -54,6 +54,7 @@ export function AppRouter() {
                 <Route path="/perfil" element={<ProfilePage />} />
                 <Route path="/perfil/editar" element={<EditProfilePage />} />
                 <Route path="/perfil/:userId" element={<UserProfilePage />} />
+                <Route path="/usuario/:userId" element={<UserProfilePage />} />
                 <Route path="/articulos" element={<ArticlesListPage />} />
                 <Route path="/nuevo-articulo" element={<WriteArticlePage />} />
                 <Route path="/articulos/:articleId" element={<ReadArticlePage />} />
