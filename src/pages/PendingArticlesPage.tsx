@@ -89,7 +89,7 @@ export function PendingArticlesPage() {
 
     return (
         <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-            <Header/>
+            <Header preferFallback={true} fallbackPath="/dashboard" />
             <main style={{ maxWidth: "960px", margin: "32px auto", padding: "0 24px" }}>
                 <section style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "28px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "18px", marginBottom: "24px" }}>

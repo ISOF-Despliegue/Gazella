@@ -93,7 +93,7 @@ export function ReviewArticlePage() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Header />
+            <Header preferFallback={true} fallbackPath="/editor/articulos" />
             <main className="mx-auto w-full max-w-7xl" style={{ padding: "2rem 1.5rem", boxSizing: "border-box" }}>
                 {status && !article ? (
                     <div className="rounded-2xl border border-gray-200 bg-white text-center text-gray-500 shadow-sm" style={{ padding: "3rem", boxSizing: "border-box" }}>

@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLocalProfile, getMyAccount, getFollowersFor, saveLocalProfile, type EditableAccountProfile } from '../services/accounts';
 import { getCurrentSession, type AuthSession } from '../services/auth';
-import { BackButton } from '../components/BackButton';
 import { SafeImage } from '../components/SafeImage';
-import { assets } from '../assets/assets';
+import { Header } from '../components/Header';
 
 const MOCK_PROFILE_ARTICLES = [
     { title: 'La importancia de separar basura', date: '20 Abr 2026', status: 'Publicado' },
@@ -63,6 +62,7 @@ export function ProfilePage() {
 
     const displayName = useMemo(() => getFullName(profile, session), [profile, session]);
     const roleLabel = session?.roles[0] ?? profile?.role ?? 'sin rol asignado';
+    // @ts-ignore: Unused variable allowed here temporarily
     const initials = displayName
         .split(' ')
         .filter(Boolean)
@@ -72,25 +72,7 @@ export function ProfilePage() {
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: 'white', padding: '24px 36px' }}>
-            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                    <BackButton fallbackPath="/dashboard" preferFallback />
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    >
-                        <img src={assets.gazella} alt="Gazella" style={{ width: '62px', objectFit: 'contain' }} />
-                        <h1 style={{ fontSize: '40px', fontWeight: 'bold' }}>Conservacion de la biodiversidad</h1>
-                    </button>
-                </div>
-                <button
-                    onClick={() => navigate('/perfil')}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}
-                >
-                    <span style={{ color: '#6b7280' }}>{initials}</span>
-                    {displayName.split(' ')[0]}
-                </button>
-            </header>
+            <Header/>
 
             <main style={{ border: '1px solid #bdbdbd', borderRadius: '8px', padding: '26px', minHeight: '590px' }}>
                 <section style={{

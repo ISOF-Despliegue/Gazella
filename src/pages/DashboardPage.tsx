@@ -96,25 +96,8 @@ export function DashboardPage() {
                     <BackButton fallbackPath="/home" />
                     <img src={assets.gazella} alt="Gazella" style={{ width: '70px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '28px', fontWeight: 'bold', lineHeight: '1.2' }}>
-                        Conservacion de<br />la biodiversidad
+                        Gazella
                     </h1>
-                </div>
-
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '9999px',
-                    padding: '8px 16px',
-                    width: '320px',
-                    backgroundColor: 'white',
-                }}>
-                    <span style={{ marginRight: '8px', color: '#9ca3af' }}>Buscar</span>
-                    <input
-                        type="text"
-                        placeholder="Busca articulos o proyectos"
-                        style={{ outline: 'none', fontSize: '14px', width: '100%', border: 'none', background: 'transparent' }}
-                    />
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

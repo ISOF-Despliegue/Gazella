@@ -6,6 +6,11 @@ import { BackButton } from '../components/BackButton';
 import { assets } from '../assets/assets';
 import { SafeImage } from './SafeImage';
 
+type HeaderProps = {
+    fallbackPath?: string;
+    preferFallback?: boolean;
+};
+
 function getFullName(profile: EditableAccountProfile | null, session: AuthSession | null) {
     if (profile?.name) {
         return [profile.name, profile.parentalSurname, profile.maternalSurname]
@@ -16,7 +21,7 @@ function getFullName(profile: EditableAccountProfile | null, session: AuthSessio
     return session?.email?.split('@')[0] ?? 'usuario';
 }
 
-export function Header() {
+export function Header({ fallbackPath = '/dashboard', preferFallback = false }: HeaderProps = {}) {
     const navigate = useNavigate();
         const [session, setSession] = useState<AuthSession | null>(getCurrentSession());
         const [profile, setProfile] = useState<EditableAccountProfile | null>(null);
@@ -69,7 +74,7 @@ export function Header() {
                 gap: '24px',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                    <BackButton fallbackPath="/dashboard" />
+                    <BackButton fallbackPath={fallbackPath} preferFallback={preferFallback} />
                     <button
                         onClick={() => navigate('/dashboard')}
                         style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
