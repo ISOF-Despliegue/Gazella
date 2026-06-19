@@ -1,7 +1,7 @@
 export const API_BASE_URL =
     globalThis.location.protocol === "http:" || globalThis.location.protocol === "https:" 
         ? "" 
-        : "http://localhost:4000";
+        : "http://ec2-18-117-197-124.us-east-2.compute.amazonaws.com";
 
 export class ApiError extends Error {
     status: number;

@@ -3,6 +3,7 @@ const ALLOWED_ORIGINS: string[] = [
     "http://localhost:8000",
     "http://localhost:10000",
     "https://gazella.com",
+    "http://ec2-18-117-197-124.us-east-2.compute.amazonaws.com"
 ];
 
 type ImageValidationResult =

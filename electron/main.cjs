@@ -6,8 +6,8 @@ const http = require('node:http');
 const isDev = !app.isPackaged;
 let staticServer;
 const gatewayUrl = isDev
-  ? process.env.GAZELLA_API_BASE_URL || 'http://localhost:4000'
-  : "http://localhost:4000";
+  ? process.env.GAZELLA_API_BASE_URL || 'http://ec2-18-117-197-124.us-east-2.compute.amazonaws.com'
+  : "http://ec2-18-117-197-124.us-east-2.compute.amazonaws.com";
 
 const proxiedPrefixes = [
   '/api/auth',

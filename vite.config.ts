@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindscss from '@tailwindcss/vite'
 
-const TARGET = 'http://localhost:4000';
+const TARGET = 'http://ec2-18-117-197-124.us-east-2.compute.amazonaws.com';
 const DEV_ORIGIN = 'http://localhost:5173';
 
 function createProxy() {

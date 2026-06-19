@@ -12,8 +12,8 @@ test.describe('CP-IDP-01 + CP-CLI-01 — Registro y login', () => {
       data: {
         email: TEST_EMAIL,
         password: TEST_PASSWORD,
-        name: 'Playwright',           // solo letras — regex del schema
-        parentalSurname: 'Tester',    // solo letras
+        name: 'Playwright',
+        parentalSurname: 'Tester',
       },
     });
 

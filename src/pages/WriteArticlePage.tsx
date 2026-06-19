@@ -92,10 +92,10 @@ export const WriteArticlePage = () => {
 
             const draftBody = {
                 id: draftId || "",
-                title,
-                summary,
-                categoryId,
-                coverUri,
+                title: title,
+                summary: summary,
+                categoryId: categoryId,
+                coverUri: coverUri,
                 content: JSON.stringify(content),
                 authorId: currentAuthorId,
                 authorName: currentAuthorName,
@@ -147,10 +147,10 @@ export const WriteArticlePage = () => {
 
             const draftBody = {
                 id: draftId || "",
-                title,
-                summary,
-                categoryId,
-                coverUri,
+                title: title,
+                summary: summary,
+                categoryId: categoryId,
+                coverUri: coverUri,
                 content: JSON.stringify(content), 
                 authorId: currentAuthorId, 
                 authorName: currentAuthorName, 
